@@ -228,6 +228,19 @@ class TextIndex:
         return relative_to_project(p) if p.exists() else image_path.replace("\\", "/")
 
     def load(self, path: Path):
+        meta_file = path / "index_meta.json"
+        if meta_file.exists():
+            try:
+                meta = json.loads(meta_file.read_text(encoding="utf-8"))
+                saved_model = meta.get("model")
+                if saved_model and saved_model != TEXT_EMBEDDING_MODEL:
+                    print(f"WARNING: Text index model mismatch (saved: '{saved_model}', configured: '{TEXT_EMBEDDING_MODEL}'). Rebuilding index...")
+                    self.build_from_processed(PROCESSED_DIR)
+                    self.save(path)
+                    return
+            except Exception as e:
+                print(f"Error reading text index metadata: {e}")
+
         self.dense_embeddings = np.load(path / "dense_embeddings.npy")
         raw = json.loads((path / "text_entries.json").read_text(encoding="utf-8"))
         if len(raw) != len(self.dense_embeddings):

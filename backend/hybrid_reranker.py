@@ -17,10 +17,10 @@ class HybridRerankedRetriever:
         self.visual_index = visual_index
 
     @staticmethod
-    def _rank_score(rank: int | None, floor: float = 0.0) -> float:
+    def _rank_score(rank: int | None, floor: float = 0.0, decay: float = 0.1) -> float:
         if rank is None:
             return floor
-        return 1.0 / (10.0 + rank)
+        return 1.0 / (10.0 + rank * decay)
 
     def search(
         self,

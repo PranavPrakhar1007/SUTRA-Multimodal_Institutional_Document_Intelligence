@@ -149,6 +149,8 @@ export default function App() {
     }, 2800)
   }
 
+  const abortControllerRef = useRef(null)
+
   const handleQuery = async (queryText = question, selectedMode = mode) => {
     const q = queryText.trim()
     if (!q) {
@@ -156,6 +158,12 @@ export default function App() {
       triggerToast('Please enter a search query')
       return
     }
+
+    if (abortControllerRef.current) {
+      abortControllerRef.current.abort()
+    }
+    abortControllerRef.current = new AbortController()
+
     setLoading(true)
     setLoadingStep(1)
     setResult(null)
@@ -169,15 +177,23 @@ export default function App() {
       const res = await fetch(`${API_BASE}/api/query`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ question: q, mode: selectedMode, top_k: 5 })
+        body: JSON.stringify({ question: q, mode: selectedMode, top_k: 5 }),
+        signal: abortControllerRef.current.signal,
       })
+
+      if (!res.ok) {
+        const errorData = await res.json().catch(() => ({}))
+        throw new Error(errorData.detail || `Server error: HTTP ${res.status}`)
+      }
+
       const data = await res.json()
       setResult(data)
       if (data.retrieved_pages?.length > 0) {
         setSelectedEvidence(data.retrieved_pages[0])
       }
-      triggerToast(`Search finished in ${data.total_time_ms || 420}ms`)
+      triggerToast(`Search finished in ${data.total_time_ms ? data.total_time_ms + 'ms' : 'real-time'}`)
     } catch (e) {
+      if (e.name === 'AbortError') return
       setResult({ status: 'error', answer: `Connection error: ${e.message}` })
       triggerToast(`Error: ${e.message}`)
     } finally {
@@ -194,6 +210,12 @@ export default function App() {
       triggerToast('Please enter a query to run Tri-Modal Comparison')
       return
     }
+
+    if (abortControllerRef.current) {
+      abortControllerRef.current.abort()
+    }
+    abortControllerRef.current = new AbortController()
+
     setLoading(true)
     setLoadingStep(1)
     setResult(null)
@@ -207,12 +229,20 @@ export default function App() {
       const res = await fetch(`${API_BASE}/api/compare`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ question: q, top_k: 3 })
+        body: JSON.stringify({ question: q, top_k: 3 }),
+        signal: abortControllerRef.current.signal,
       })
+
+      if (!res.ok) {
+        const errorData = await res.json().catch(() => ({}))
+        throw new Error(errorData.detail || `Server error: HTTP ${res.status}`)
+      }
+
       const data = await res.json()
       setComparison(data)
-      triggerToast(`Tri-Modal Benchmark finished in ${data.total_time_ms || 79107}ms`)
+      triggerToast(`Tri-Modal Benchmark finished in ${data.total_time_ms ? data.total_time_ms + 'ms' : 'completed'}`)
     } catch (e) {
+      if (e.name === 'AbortError') return
       setComparison({ error: e.message })
       triggerToast(`Comparison Error: ${e.message}`)
     } finally {
@@ -230,14 +260,20 @@ export default function App() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ provider: apiProvider, api_key: apiKey })
       })
+
+      if (!res.ok) {
+        const errorData = await res.json().catch(() => ({}))
+        throw new Error(errorData.detail || `HTTP ${res.status}`)
+      }
+
       const data = await res.json()
       if (data.status === 'ok') {
         localStorage.setItem('llm_api_key', apiKey)
         localStorage.setItem('llm_provider', apiProvider)
         setApiKeySaved(true)
         setApiKeyEditing(false)
-        const h = await fetch(`${API_BASE}/api/health`).then(r => r.json())
-        setHealth(h)
+        const h = await fetch(`${API_BASE}/api/health`).then(r => r.json()).catch(() => null)
+        if (h) setHealth(h)
         triggerToast(`${apiProvider.toUpperCase()} API key saved!`)
       }
     } catch (e) {

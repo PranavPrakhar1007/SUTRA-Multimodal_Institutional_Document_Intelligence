@@ -11,7 +11,7 @@ from typing import Optional
 import numpy as np
 from PIL import Image
 
-from backend.config import METADATA_DIR, PAGES_DIR, VISUAL_EMBEDDING_MODEL
+from backend.config import METADATA_DIR, PAGES_DIR, PROCESSED_DIR, VISUAL_EMBEDDING_MODEL
 from backend.path_utils import relative_to_project, resolve_page_image
 
 _colpali_model = None
@@ -170,16 +170,30 @@ class VisualIndex:
         with open(path / "index_meta.json", "w", encoding="utf-8") as f:
             json.dump(
                 {
-                    "index_type": "colpali_vlm",
+                    "index_type": "colqwen2_vlm" if "colqwen" in VISUAL_EMBEDDING_MODEL.lower() else "colpali_vlm",
                     "model": VISUAL_EMBEDDING_MODEL,
                     "entry_count": len(self.entries),
                 },
                 f,
                 indent=2,
             )
-        print(f"ColPali visual index saved to {path}")
+        print(f"Visual index ({VISUAL_EMBEDDING_MODEL}) saved to {path}")
 
     def load(self, path: Path):
+        meta_file = path / "index_meta.json"
+        if meta_file.exists():
+            try:
+                with open(meta_file, "r", encoding="utf-8") as f:
+                    meta = json.load(f)
+                    saved_model = meta.get("model")
+                    if saved_model and saved_model != VISUAL_EMBEDDING_MODEL:
+                        print(f"WARNING: Visual index model mismatch (saved: '{saved_model}', configured: '{VISUAL_EMBEDDING_MODEL}'). Rebuilding index...")
+                        self.build_from_processed(PROCESSED_DIR)
+                        self.save(path)
+                        return
+            except Exception as e:
+                print(f"Error reading index_meta.json: {e}")
+
         npz_file = path / "colpali_embeddings.npz"
         npy_file = path / "visual_embeddings.npy"
 
@@ -198,19 +212,15 @@ class VisualIndex:
         for e in raw_entries:
             nid = e.get("notice_id", "")
             pnum = int(e.get("page_number", 1))
-            stored_relative = e.get("relative_image_path", "")
-            image_path = resolve_page_image(nid, pnum, stored_relative)
-            self.entries.append(
-                {
-                    "notice_id": nid,
-                    "doc_id": e.get("doc_id", nid),
-                    "filename": e.get("filename", f"{nid}.pdf"),
-                    "file_name": e.get("file_name", f"{nid}.pdf"),
-                    "page_number": pnum,
-                    "page": int(e.get("page", pnum)),
-                    "relative_image_path": stored_relative,
-                    "image_path": str(image_path) if image_path else "",
-                }
-            )
+            img_path = resolve_page_image(nid, pnum, e.get("relative_image_path", ""))
+            entry = e.copy()
+            if img_path:
+                entry["relative_image_path"] = relative_to_project(img_path)
+            self.entries.append(entry)
 
-        print(f"ColPali visual index loaded from {path}: {len(self.entries)} pages")
+        if len(self.entries) != len(self.image_embeddings) or len(self.entries) == 0:
+            print(f"WARNING: Visual index corrupted or empty (entries: {len(self.entries)}, embeddings: {len(self.image_embeddings)}). Rebuilding index...")
+            self.build_from_processed(PROCESSED_DIR)
+            self.save(path)
+
+        print(f"Visual index ({VISUAL_EMBEDDING_MODEL}) loaded from {path}: {len(self.entries)} pages")

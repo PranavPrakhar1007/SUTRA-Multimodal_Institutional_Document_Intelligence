@@ -75,12 +75,15 @@ def main():
     hybrid_rrf = HybridRetriever(text, visual)
     hybrid_reranked = HybridRerankedRetriever(text, visual)
 
-    modes = ["text_baseline", "visual_clip_baseline", "visual_reranked", "hybrid_rrf_baseline", "hybrid_reranked"]
+    modes = ["text_baseline", "visual_vlm", "visual_reranked", "hybrid_rrf_baseline", "hybrid_reranked"]
 
-    # Warm models before timing retrieval. Model initialization is reported separately.
+    # Warm all models before timing retrieval.
     init_start = time.perf_counter()
     text.search("warmup query", top_k=1)
     visual.search("warmup query", top_k=1)
+    visual_reranker.score_candidates("warmup query", candidate_ids=None, top_k=1)
+    hybrid_rrf.search("warmup query", top_k=1)
+    hybrid_reranked.search("warmup query", top_k=1)
     warmup_init_ms = round((time.perf_counter() - init_start) * 1000, 2)
 
     page_count = len(text.entries)
@@ -108,10 +111,10 @@ def main():
             start = time.perf_counter()
             if mode == "text_baseline":
                 retrieved = text.search(question, top_k=page_count)
-            elif mode == "visual_clip_baseline":
+            elif mode == "visual_vlm":
                 retrieved = visual.search(question, top_k=page_count)
             elif mode == "visual_reranked":
-                stage1 = visual.search(question, top_k=page_count)
+                stage1 = visual.search(question, top_k=HYBRID_CANDIDATE_UNION_SIZE)
                 retrieved = visual_reranker.score_candidates(question, stage1, top_k=page_count)
             elif mode == "hybrid_rrf_baseline":
                 retrieved = hybrid_rrf.search(
@@ -124,7 +127,7 @@ def main():
                 retrieved = hybrid_reranked.search(
                     question,
                     top_k=page_count,
-                    candidate_union_size=page_count,
+                    candidate_union_size=HYBRID_CANDIDATE_UNION_SIZE,
                 )
             latency_ms = round((time.perf_counter() - start) * 1000, 2)
 

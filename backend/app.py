@@ -84,7 +84,7 @@ def startup():
 
 
 ModeLiteral = Literal[
-    "text", "text_baseline", "visual", "visual_clip_baseline", "visual_reranked",
+    "text", "text_baseline", "visual", "vision", "visual_colqwen2", "visual_clip_baseline", "visual_reranked",
     "hybrid", "hybrid_rrf_baseline", "hybrid_reranked"
 ]
 
@@ -114,8 +114,12 @@ def _retrieve(question: str, mode: str, top_k: int):
     _require_indexes()
     if mode in ("text", "text_baseline"):
         return text_index.search(question, top_k=top_k)
-    if mode in ("visual", "visual_colqwen2", "visual_clip_baseline", "visual_reranked"):
+    if mode in ("visual_reranked",):
+        return visual_reranker.score_candidates(question, candidate_ids=None, top_k=top_k)
+    if mode in ("visual", "vision", "visual_colqwen2", "visual_clip_baseline"):
         return visual_index.search(question, top_k=top_k)
+    if mode in ("hybrid_reranked",):
+        return hybrid_reranked_retriever.search(question, top_k=top_k)
     return hybrid_retriever.search(
         question,
         top_k=top_k,
