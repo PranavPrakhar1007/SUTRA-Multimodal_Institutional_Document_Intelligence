@@ -1,0 +1,90 @@
+SL 
+NO Application No.
+Candidate Name
+Remarks
+1
+NITJSR/26/MTP/D
+ME/MDG/0005
+AMAN KUMAR
+Provisionally shortlisted for admission in M.tech Full-time: Machine Design
+2
+NITJSR/26/MTP/D
+ME/ESE/0008
+ANNIE 
+WASHINGTON 
+TOPNO
+Provisionally shortlisted for admission in M.tech Full-time: Energy System Engineering
+3
+NITJSR/26/MTP/D
+ME/MDG/0021
+AMAN 
+BHARDWAJ
+Provisionally shortlisted for admission in M.tech Full-time: Machine Design
+4
+NITJSR/26/MTP/D
+ME/THM/0033
+RAHUL KUMAR 
+ARYA
+Provisionally shortlisted for admission in M.tech Full-time: Thermal Engineering
+5
+NITJSR/26/MTP/D
+ME/THM/0038
+PALAK MUNDA
+Provisionally shortlisted for admission in M.tech Full-time: Thermal Engineering
+1
+NITJSR/26/MTP/D
+ME/MANTE/0004
+DEEPIKA 
+KUMARI
+Provisionally shortlisted for admission in M.tech Part-time subjected to submission of NOC at the the time of 
+admission
+2
+NITJSR/26/MTP/D
+ME/MANTE/0006
+EJAJ AKHTER
+Provisionally shortlisted for admission in M.tech Part-time subjected to submission of NOC at the the time of 
+admission
+3
+NITJSR/26/MTP/D
+ME/MANTE/0013
+SWATI SHIVANGI
+Provisionally shortlisted for admission in M.tech Part-time subjected to submission of NOC at the the time of 
+admission
+4
+NITJSR/26/MTP/D
+ME/MANTE/0018
+CHHOTU KUMAR 
+PATHAK
+Provisionally shortlisted for admission in M.tech Part-time subjected to submission of NOC at the the time of 
+admission
+5
+NITJSR/26/MTP/D
+ME/MANTE/0019
+AJAY KUMAR
+Provisionally shortlisted for admission in M.tech Part-time subjected to submission of NOC at the the time of 
+admission
+6
+NITJSR/26/MTP/D
+ME/MANTE/0020
+SUMIT KUMAR 
+SUMAN
+Provisionally shortlisted for admission in M.tech Part-time subjected to submission of NOC at the the time of 
+admission
+7
+NITJSR/26/MTP/D
+ME/MANTE/0024
+ANAND KUMAR
+Provisionally shortlisted for admission in M.tech Part-time subjected to submission of NOC at the the time of 
+admission
+8
+NITJSR/26/MTP/D
+ME/MANTE/0026
+ALOK PRASAD 
+GUPTA
+Provisionally shortlisted for admission in M.tech Part-time subjected to submission of NOC at the the time of 
+admission
+M.Tech (Part-Time Hybrid Mode)
+M.Tech (Full-Time)
+NATIONAL INSTITUTE OF TECHNOLOGY JAMSHEDPUR
+JHARKHAND, INDIA  – 831014
+Dept. of Mechanical Engineering

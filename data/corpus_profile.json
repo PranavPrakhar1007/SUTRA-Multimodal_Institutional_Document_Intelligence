@@ -1,0 +1,729 @@
+{
+  "total_documents": 7,
+  "documents": [
+    {
+      "notice_id": "notice_1",
+      "canonical_filename": "notice_1.pdf",
+      "file_size_bytes": 887843,
+      "pages": [
+        {
+          "page_number": 1,
+          "width": 595.3,
+          "height": 841.9,
+          "text_length": 0,
+          "has_text": false,
+          "word_count": 0,
+          "table_count": 0,
+          "has_tables": false,
+          "image_count": 1,
+          "has_images": true,
+          "line_count": 0,
+          "rect_count": 1,
+          "has_visual_structure": false,
+          "scan_status": "likely_scanned",
+          "text_preview": ""
+        }
+      ],
+      "summary": {
+        "page_count": 1,
+        "total_text_characters": 0,
+        "total_tables": 0,
+        "total_images": 1,
+        "text_pages": 0,
+        "scanned_pages": 1,
+        "pages_with_tables": 0,
+        "pages_with_visual_structure": 0,
+        "text_availability": "none",
+        "has_tables": false,
+        "has_scanned_content": true,
+        "visual_complexity": "low",
+        "document_condition": "scanned"
+      },
+      "page_count": 1,
+      "processing_status": "profiled"
+    },
+    {
+      "notice_id": "notice_2",
+      "canonical_filename": "notice_2.pdf",
+      "file_size_bytes": 120970,
+      "pages": [
+        {
+          "page_number": 1,
+          "width": 595.2,
+          "height": 841.7,
+          "text_length": 0,
+          "has_text": false,
+          "word_count": 0,
+          "table_count": 0,
+          "has_tables": false,
+          "image_count": 5,
+          "has_images": true,
+          "line_count": 0,
+          "rect_count": 0,
+          "has_visual_structure": false,
+          "scan_status": "likely_scanned",
+          "text_preview": ""
+        }
+      ],
+      "summary": {
+        "page_count": 1,
+        "total_text_characters": 0,
+        "total_tables": 0,
+        "total_images": 5,
+        "text_pages": 0,
+        "scanned_pages": 1,
+        "pages_with_tables": 0,
+        "pages_with_visual_structure": 0,
+        "text_availability": "none",
+        "has_tables": false,
+        "has_scanned_content": true,
+        "visual_complexity": "low",
+        "document_condition": "scanned"
+      },
+      "page_count": 1,
+      "processing_status": "profiled"
+    },
+    {
+      "notice_id": "notice_3",
+      "canonical_filename": "notice_3.pdf",
+      "file_size_bytes": 1137908,
+      "pages": [
+        {
+          "page_number": 1,
+          "width": 578.2,
+          "height": 824.4,
+          "text_length": 0,
+          "has_text": false,
+          "word_count": 0,
+          "table_count": 0,
+          "has_tables": false,
+          "image_count": 1,
+          "has_images": true,
+          "line_count": 0,
+          "rect_count": 0,
+          "has_visual_structure": false,
+          "scan_status": "likely_scanned",
+          "text_preview": ""
+        }
+      ],
+      "summary": {
+        "page_count": 1,
+        "total_text_characters": 0,
+        "total_tables": 0,
+        "total_images": 1,
+        "text_pages": 0,
+        "scanned_pages": 1,
+        "pages_with_tables": 0,
+        "pages_with_visual_structure": 0,
+        "text_availability": "none",
+        "has_tables": false,
+        "has_scanned_content": true,
+        "visual_complexity": "low",
+        "document_condition": "scanned"
+      },
+      "page_count": 1,
+      "processing_status": "profiled"
+    },
+    {
+      "notice_id": "notice_4",
+      "canonical_filename": "notice_4.pdf",
+      "file_size_bytes": 632949,
+      "pages": [
+        {
+          "page_number": 1,
+          "width": 578.2,
+          "height": 824.4,
+          "text_length": 0,
+          "has_text": false,
+          "word_count": 0,
+          "table_count": 0,
+          "has_tables": false,
+          "image_count": 1,
+          "has_images": true,
+          "line_count": 0,
+          "rect_count": 0,
+          "has_visual_structure": false,
+          "scan_status": "likely_scanned",
+          "text_preview": ""
+        }
+      ],
+      "summary": {
+        "page_count": 1,
+        "total_text_characters": 0,
+        "total_tables": 0,
+        "total_images": 1,
+        "text_pages": 0,
+        "scanned_pages": 1,
+        "pages_with_tables": 0,
+        "pages_with_visual_structure": 0,
+        "text_availability": "none",
+        "has_tables": false,
+        "has_scanned_content": true,
+        "visual_complexity": "low",
+        "document_condition": "scanned"
+      },
+      "page_count": 1,
+      "processing_status": "profiled"
+    },
+    {
+      "notice_id": "notice_5",
+      "canonical_filename": "notice_5.pdf",
+      "file_size_bytes": 4183560,
+      "pages": [
+        {
+          "page_number": 1,
+          "width": 541,
+          "height": 830,
+          "text_length": 0,
+          "has_text": false,
+          "word_count": 0,
+          "table_count": 0,
+          "has_tables": false,
+          "image_count": 1,
+          "has_images": true,
+          "line_count": 0,
+          "rect_count": 0,
+          "has_visual_structure": false,
+          "scan_status": "likely_scanned",
+          "text_preview": ""
+        },
+        {
+          "page_number": 2,
+          "width": 841.9,
+          "height": 595.3,
+          "text_length": 913,
+          "has_text": true,
+          "word_count": 94,
+          "table_count": 3,
+          "has_tables": true,
+          "table_details": [
+            {
+              "table_index": 0,
+              "rows": 5,
+              "columns": 6
+            },
+            {
+              "table_index": 1,
+              "rows": 2,
+              "columns": 1
+            },
+            {
+              "table_index": 2,
+              "rows": 6,
+              "columns": 10
+            }
+          ],
+          "image_count": 0,
+          "has_images": false,
+          "line_count": 0,
+          "rect_count": 142,
+          "has_visual_structure": true,
+          "scan_status": "digital_text",
+          "text_preview": "Annexure-I List of Selected Candidates for MTech Programs through IAT Transportation Engineering (Full-Time) Programme Name Sl. No. Application Number Applicant Name Category Selected/Not Selected Tra"
+        },
+        {
+          "page_number": 3,
+          "width": 841.9,
+          "height": 595.3,
+          "text_length": 1617,
+          "has_text": true,
+          "word_count": 148,
+          "table_count": 2,
+          "has_tables": true,
+          "table_details": [
+            {
+              "table_index": 0,
+              "rows": 4,
+              "columns": 6
+            },
+            {
+              "table_index": 1,
+              "rows": 15,
+              "columns": 7
+            }
+          ],
+          "image_count": 0,
+          "has_images": false,
+          "line_count": 0,
+          "rect_count": 183,
+          "has_visual_structure": true,
+          "scan_status": "digital_text",
+          "text_preview": "NITISH KUMAR 4 NITJSR/26/MTP/DCE/GEOT/0026 Geotechnical Engineering Gen Provisionally selected SINGH 5 NITJSR/26/MTP/DCE/GEOT/0046 Geotechnical Engineering anandita OBC Provisionally selected 6 NITJSR"
+        },
+        {
+          "page_number": 4,
+          "width": 841.9,
+          "height": 595.3,
+          "text_length": 1625,
+          "has_text": true,
+          "word_count": 160,
+          "table_count": 2,
+          "has_tables": true,
+          "table_details": [
+            {
+              "table_index": 0,
+              "rows": 11,
+              "columns": 14
+            },
+            {
+              "table_index": 1,
+              "rows": 9,
+              "columns": 5
+            }
+          ],
+          "image_count": 0,
+          "has_images": false,
+          "line_count": 0,
+          "rect_count": 245,
+          "has_visual_structure": true,
+          "scan_status": "digital_text",
+          "text_preview": "Structural Engineering (Full-Time) Sl No. Application Number Applicant Name Category Selected/Not Selected 1 NITJSR/26/MTP/DCE/STE/0004 Structural Engineering Wakibuz Zaman Gen Provisionally selected"
+        },
+        {
+          "page_number": 5,
+          "width": 841.9,
+          "height": 595.3,
+          "text_length": 268,
+          "has_text": true,
+          "word_count": 24,
+          "table_count": 1,
+          "has_tables": true,
+          "table_details": [
+            {
+              "table_index": 0,
+              "rows": 3,
+              "columns": 5
+            }
+          ],
+          "image_count": 0,
+          "has_images": false,
+          "line_count": 0,
+          "rect_count": 30,
+          "has_visual_structure": true,
+          "scan_status": "digital_text",
+          "text_preview": "8 NITJSR/26/MTP/DCE/GEOT/0017 Structural Engineering RAJENDRA KUMAR Provisionally selected 9 NITJSR/26/MTP/DCE/GEOT/0023 Structural Engineering TUNNA KUMAR Provisionally selected 10 NITJSR/26/MTP/DCE/"
+        },
+        {
+          "page_number": 6,
+          "width": 792.0,
+          "height": 612.0,
+          "text_length": 2002,
+          "has_text": true,
+          "word_count": 241,
+          "table_count": 1,
+          "has_tables": true,
+          "table_details": [
+            {
+              "table_index": 0,
+              "rows": 13,
+              "columns": 7
+            }
+          ],
+          "image_count": 0,
+          "has_images": false,
+          "line_count": 0,
+          "rect_count": 141,
+          "has_visual_structure": true,
+          "scan_status": "digital_text",
+          "text_preview": "Summary of Selected/Not selected/Waitlisted Candidates of M. Tech (All categories) Admissions through IAT in Autumn Semester of the Academic Year 2026-27 (Format to be filled & signed and submitted in"
+        },
+        {
+          "page_number": 7,
+          "width": 792,
+          "height": 612,
+          "text_length": 841,
+          "has_text": true,
+          "word_count": 106,
+          "table_count": 1,
+          "has_tables": true,
+          "table_details": [
+            {
+              "table_index": 0,
+              "rows": 8,
+              "columns": 8
+            }
+          ],
+          "image_count": 0,
+          "has_images": false,
+          "line_count": 0,
+          "rect_count": 18,
+          "has_visual_structure": true,
+          "scan_status": "digital_text",
+          "text_preview": "M.Tech 2026 (IAT) Power System Engineering (Full Time) Applied Selected Sl# Application Number App Cat Programme Name Applicant Name Remarks Category Category 1 NITJSR/26/MTP/EEE/PSE/0057 M.Tech (FT)"
+        },
+        {
+          "page_number": 8,
+          "width": 792,
+          "height": 612,
+          "text_length": 1053,
+          "has_text": true,
+          "word_count": 128,
+          "table_count": 1,
+          "has_tables": true,
+          "table_details": [
+            {
+              "table_index": 0,
+              "rows": 10,
+              "columns": 7
+            }
+          ],
+          "image_count": 0,
+          "has_images": false,
+          "line_count": 0,
+          "rect_count": 19,
+          "has_visual_structure": true,
+          "scan_status": "digital_text",
+          "text_preview": "M.Tech 2026 (IAT) Power System Engineering (Part Time Hybrid Mode) Applied Sl# Application Number App Cat Programme Name Applicant Name Remarks Category 1 NITJSR/26/MTP/EEE/PSE/0039 M.Tech (Part-Time"
+        },
+        {
+          "page_number": 9,
+          "width": 792,
+          "height": 612,
+          "text_length": 620,
+          "has_text": true,
+          "word_count": 83,
+          "table_count": 1,
+          "has_tables": true,
+          "table_details": [
+            {
+              "table_index": 0,
+              "rows": 6,
+              "columns": 7
+            }
+          ],
+          "image_count": 0,
+          "has_images": false,
+          "line_count": 0,
+          "rect_count": 15,
+          "has_visual_structure": true,
+          "scan_status": "digital_text",
+          "text_preview": "M.Tech 2026 (IAT) Power Electronics and Drives (Part Time Hybrid Mode) Applied Sl# Application Number App Cat Programme Name Applicant Name Remarks Category NITJSR/26/MTP/EEE/PED/0 M.Tech (Part-Time H"
+        },
+        {
+          "page_number": 10,
+          "width": 792,
+          "height": 612,
+          "text_length": 2161,
+          "has_text": true,
+          "word_count": 286,
+          "table_count": 1,
+          "has_tables": true,
+          "table_details": [
+            {
+              "table_index": 0,
+              "rows": 16,
+              "columns": 4
+            }
+          ],
+          "image_count": 1,
+          "has_images": true,
+          "line_count": 0,
+          "rect_count": 30,
+          "has_visual_structure": true,
+          "scan_status": "digital_text",
+          "text_preview": "NATIONAL INSTITUTE OF TECHNOLOGY JAMSHEDPUR JHARKHAND, INDIA – 831014 Dept. of Mechanical Engineering SL NO Application No. Candidate Name Remarks M.Tech (Full-Time) NITJSR/26/MTP/D 1 ME/MDG/0005 AMAN"
+        },
+        {
+          "page_number": 11,
+          "width": 792,
+          "height": 612,
+          "text_length": 1878,
+          "has_text": true,
+          "word_count": 255,
+          "table_count": 1,
+          "has_tables": true,
+          "table_details": [
+            {
+              "table_index": 0,
+              "rows": 12,
+              "columns": 4
+            }
+          ],
+          "image_count": 0,
+          "has_images": false,
+          "line_count": 0,
+          "rect_count": 22,
+          "has_visual_structure": true,
+          "scan_status": "digital_text",
+          "text_preview": "NITJSR/26/MTP/D Provisionally shortlisted for admission in M.tech Part-time subjected to submission of NOC at the the time of 9 ME/MANTE/0027 SUDHIR KUMAR admission NITJSR/26/MTP/D Provisionally short"
+        },
+        {
+          "page_number": 12,
+          "width": 595.3,
+          "height": 841.9,
+          "text_length": 966,
+          "has_text": true,
+          "word_count": 110,
+          "table_count": 2,
+          "has_tables": true,
+          "table_details": [
+            {
+              "table_index": 0,
+              "rows": 6,
+              "columns": 5
+            },
+            {
+              "table_index": 1,
+              "rows": 8,
+              "columns": 5
+            }
+          ],
+          "image_count": 1,
+          "has_images": true,
+          "line_count": 0,
+          "rect_count": 114,
+          "has_visual_structure": true,
+          "scan_status": "digital_text",
+          "text_preview": "उ(cid:523)ादन और औ(cid:552)ोिगक अिभयांि(cid:361)की िवभाग DEPARTMENT OF PRODUCTION AND INDUSTRIAL ENGINEERING M. Tech. Admission (IAT-2026) Program Name: M. Tech. (Full Time) Operations and Supply Chai"
+        },
+        {
+          "page_number": 13,
+          "width": 588,
+          "height": 804,
+          "text_length": 0,
+          "has_text": false,
+          "word_count": 0,
+          "table_count": 0,
+          "has_tables": false,
+          "image_count": 1,
+          "has_images": true,
+          "line_count": 0,
+          "rect_count": 0,
+          "has_visual_structure": false,
+          "scan_status": "likely_scanned",
+          "text_preview": ""
+        },
+        {
+          "page_number": 14,
+          "width": 547,
+          "height": 830,
+          "text_length": 0,
+          "has_text": false,
+          "word_count": 0,
+          "table_count": 0,
+          "has_tables": false,
+          "image_count": 1,
+          "has_images": true,
+          "line_count": 0,
+          "rect_count": 0,
+          "has_visual_structure": false,
+          "scan_status": "likely_scanned",
+          "text_preview": ""
+        },
+        {
+          "page_number": 15,
+          "width": 551,
+          "height": 830,
+          "text_length": 0,
+          "has_text": false,
+          "word_count": 0,
+          "table_count": 0,
+          "has_tables": false,
+          "image_count": 1,
+          "has_images": true,
+          "line_count": 0,
+          "rect_count": 0,
+          "has_visual_structure": false,
+          "scan_status": "likely_scanned",
+          "text_preview": ""
+        },
+        {
+          "page_number": 16,
+          "width": 579,
+          "height": 818,
+          "text_length": 0,
+          "has_text": false,
+          "word_count": 0,
+          "table_count": 0,
+          "has_tables": false,
+          "image_count": 1,
+          "has_images": true,
+          "line_count": 0,
+          "rect_count": 0,
+          "has_visual_structure": false,
+          "scan_status": "likely_scanned",
+          "text_preview": ""
+        }
+      ],
+      "summary": {
+        "page_count": 16,
+        "total_text_characters": 13944,
+        "total_tables": 16,
+        "total_images": 7,
+        "text_pages": 11,
+        "scanned_pages": 5,
+        "pages_with_tables": 11,
+        "pages_with_visual_structure": 11,
+        "text_availability": "partial",
+        "has_tables": true,
+        "has_scanned_content": true,
+        "visual_complexity": "high",
+        "document_condition": "mixed_scan_digital"
+      },
+      "page_count": 16,
+      "processing_status": "profiled"
+    },
+    {
+      "notice_id": "notice_6",
+      "canonical_filename": "notice_6.pdf",
+      "file_size_bytes": 491973,
+      "pages": [
+        {
+          "page_number": 1,
+          "width": 595,
+          "height": 840,
+          "text_length": 0,
+          "has_text": false,
+          "word_count": 0,
+          "table_count": 0,
+          "has_tables": false,
+          "image_count": 1,
+          "has_images": true,
+          "line_count": 0,
+          "rect_count": 0,
+          "has_visual_structure": false,
+          "scan_status": "likely_scanned",
+          "text_preview": ""
+        }
+      ],
+      "summary": {
+        "page_count": 1,
+        "total_text_characters": 0,
+        "total_tables": 0,
+        "total_images": 1,
+        "text_pages": 0,
+        "scanned_pages": 1,
+        "pages_with_tables": 0,
+        "pages_with_visual_structure": 0,
+        "text_availability": "none",
+        "has_tables": false,
+        "has_scanned_content": true,
+        "visual_complexity": "low",
+        "document_condition": "scanned"
+      },
+      "page_count": 1,
+      "processing_status": "profiled"
+    },
+    {
+      "notice_id": "notice_7",
+      "canonical_filename": "notice_7.pdf",
+      "file_size_bytes": 627144,
+      "pages": [
+        {
+          "page_number": 1,
+          "width": 612,
+          "height": 792,
+          "text_length": 1741,
+          "has_text": true,
+          "word_count": 243,
+          "table_count": 1,
+          "has_tables": true,
+          "table_details": [
+            {
+              "table_index": 0,
+              "rows": 10,
+              "columns": 2
+            }
+          ],
+          "image_count": 1,
+          "has_images": true,
+          "line_count": 0,
+          "rect_count": 95,
+          "has_visual_structure": true,
+          "scan_status": "digital_text",
+          "text_preview": "राष्ट्र ीय प्रौद्योगिकी संस्थान,जमशेदपुर NATIONAL INSTITUTE OF TECHNOLOGY, JAMSHEDPUR (An Institute of National Importance under MoE, Government of India) Department of Electrical Engineering Ref No."
+        },
+        {
+          "page_number": 2,
+          "width": 612,
+          "height": 792,
+          "text_length": 1647,
+          "has_text": true,
+          "word_count": 238,
+          "table_count": 0,
+          "has_tables": false,
+          "image_count": 0,
+          "has_images": false,
+          "line_count": 0,
+          "rect_count": 7,
+          "has_visual_structure": true,
+          "scan_status": "digital_text",
+          "text_preview": "Important Instructions: 1. Candidate possessing the requisite qualification and experience should apply in the attached format. Last date for application submission is 15.08.2026. 2. The duly filled u"
+        },
+        {
+          "page_number": 3,
+          "width": 612,
+          "height": 792,
+          "text_length": 1694,
+          "has_text": true,
+          "word_count": 141,
+          "table_count": 0,
+          "has_tables": false,
+          "image_count": 1,
+          "has_images": true,
+          "line_count": 0,
+          "rect_count": 13,
+          "has_visual_structure": true,
+          "scan_status": "digital_text",
+          "text_preview": "राष्ट्र ीय प्रौद्योगिकी संस्थान,जमशेदपुर NATIONAL INSTITUTE OF TECHNOLOGY, JAMSHEDPUR (An Institute of National Importance under MoE, Government of India) Department of Electrical Engineering APPLICAT"
+        },
+        {
+          "page_number": 4,
+          "width": 612,
+          "height": 792,
+          "text_length": 777,
+          "has_text": true,
+          "word_count": 124,
+          "table_count": 1,
+          "has_tables": true,
+          "table_details": [
+            {
+              "table_index": 0,
+              "rows": 6,
+              "columns": 5
+            }
+          ],
+          "image_count": 0,
+          "has_images": false,
+          "line_count": 0,
+          "rect_count": 122,
+          "has_visual_structure": true,
+          "scan_status": "digital_text",
+          "text_preview": "12. Details of academic record starting from 10th onward: Degree/Examination University / College / Year of % Marks / Subject/Branch Board Passing CGPA 10th 12th UG PG Any other 13. Work experience: 1"
+        }
+      ],
+      "summary": {
+        "page_count": 4,
+        "total_text_characters": 5859,
+        "total_tables": 2,
+        "total_images": 2,
+        "text_pages": 4,
+        "scanned_pages": 0,
+        "pages_with_tables": 2,
+        "pages_with_visual_structure": 4,
+        "text_availability": "full",
+        "has_tables": true,
+        "has_scanned_content": false,
+        "visual_complexity": "high",
+        "document_condition": "structured_with_tables"
+      },
+      "page_count": 4,
+      "processing_status": "profiled"
+    }
+  ],
+  "corpus_summary": {
+    "total_documents": 7,
+    "total_pages": 25,
+    "documents_with_tables": 2,
+    "documents_with_scanned_content": 6,
+    "document_conditions": [
+      "scanned",
+      "scanned",
+      "scanned",
+      "scanned",
+      "mixed_scan_digital",
+      "scanned",
+      "structured_with_tables"
+    ]
+  }
+}

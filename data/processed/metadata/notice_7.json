@@ -1,0 +1,71 @@
+{
+  "notice_id": "notice_7",
+  "canonical_filename": "notice_7.pdf",
+  "page_count": 4,
+  "pages": [
+    {
+      "page_number": 1,
+      "width": 612.0,
+      "height": 792.0,
+      "image_path": "data\\processed\\pages\\notice_7\\page_1.png",
+      "image_size_bytes": 252196,
+      "image_width": 1224,
+      "image_height": 1584,
+      "text_path": "data\\processed\\text\\notice_7\\page_1.txt",
+      "text_length": 1867,
+      "has_text": true,
+      "word_count": 242,
+      "text_preview": "Please print this Document only if you really need to – SAVE TREES.  Email : hod.ee@nitjsr.ac.in | www.nitjsr.ac.in  Address:- P.O – NIT Jamshedpur, Adityapur, District – Saraikela Kha",
+      "text_source": "native"
+    },
+    {
+      "page_number": 2,
+      "width": 612.0,
+      "height": 792.0,
+      "image_path": "data\\processed\\pages\\notice_7\\page_2.png",
+      "image_size_bytes": 197638,
+      "image_width": 1224,
+      "image_height": 1584,
+      "text_path": "data\\processed\\text\\notice_7\\page_2.txt",
+      "text_length": 1685,
+      "has_text": true,
+      "word_count": 237,
+      "text_preview": "Please print this Document only if you really need to – SAVE TREES.  Email : hod.ee@nitjsr.ac.in | www.nitjsr.ac.in  Address:- P.O – NIT Jamshedpur, Adityapur, District – Saraikela Kha",
+      "text_source": "native"
+    },
+    {
+      "page_number": 3,
+      "width": 612.0,
+      "height": 792.0,
+      "image_path": "data\\processed\\pages\\notice_7\\page_3.png",
+      "image_size_bytes": 153449,
+      "image_width": 1224,
+      "image_height": 1584,
+      "text_path": "data\\processed\\text\\notice_7\\page_3.txt",
+      "text_length": 1915,
+      "has_text": true,
+      "word_count": 140,
+      "text_preview": "Please print this Document only if you really need to – SAVE TREES.  Email : hod.ee@nitjsr.ac.in | www.nitjsr.ac.in  Address:- P.O – NIT Jamshedpur, Adityapur, District – Saraikela Kha",
+      "text_source": "native"
+    },
+    {
+      "page_number": 4,
+      "width": 612.0,
+      "height": 792.0,
+      "image_path": "data\\processed\\pages\\notice_7\\page_4.png",
+      "image_size_bytes": 101572,
+      "image_width": 1224,
+      "image_height": 1584,
+      "text_path": "data\\processed\\text\\notice_7\\page_4.txt",
+      "text_length": 952,
+      "has_text": true,
+      "word_count": 123,
+      "text_preview": "Please print this Document only if you really need to – SAVE TREES.  Email : hod.ee@nitjsr.ac.in | www.nitjsr.ac.in  Address:- P.O – NIT Jamshedpur, Adityapur, District – Saraikela Kha",
+      "text_source": "native"
+    }
+  ],
+  "processing_status": "success",
+  "text_availability": "full",
+  "total_text_pages": 4,
+  "ocr_applied": true
+}

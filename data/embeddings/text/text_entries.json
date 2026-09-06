@@ -1,0 +1,177 @@
+[
+  {
+    "notice_id": "notice_1",
+    "page_number": 1,
+    "has_text": true,
+    "text_length": 1633,
+    "relative_image_path": "data/processed/pages/notice_1/page_1.png"
+  },
+  {
+    "notice_id": "notice_2",
+    "page_number": 1,
+    "has_text": true,
+    "text_length": 1582,
+    "relative_image_path": "data/processed/pages/notice_2/page_1.png"
+  },
+  {
+    "notice_id": "notice_3",
+    "page_number": 1,
+    "has_text": true,
+    "text_length": 3032,
+    "relative_image_path": "data/processed/pages/notice_3/page_1.png"
+  },
+  {
+    "notice_id": "notice_4",
+    "page_number": 1,
+    "has_text": true,
+    "text_length": 1116,
+    "relative_image_path": "data/processed/pages/notice_4/page_1.png"
+  },
+  {
+    "notice_id": "notice_5",
+    "page_number": 1,
+    "has_text": true,
+    "text_length": 1679,
+    "relative_image_path": "data/processed/pages/notice_5/page_1.png"
+  },
+  {
+    "notice_id": "notice_5",
+    "page_number": 2,
+    "has_text": true,
+    "text_length": 919,
+    "relative_image_path": "data/processed/pages/notice_5/page_2.png"
+  },
+  {
+    "notice_id": "notice_5",
+    "page_number": 3,
+    "has_text": true,
+    "text_length": 1619,
+    "relative_image_path": "data/processed/pages/notice_5/page_3.png"
+  },
+  {
+    "notice_id": "notice_5",
+    "page_number": 4,
+    "has_text": true,
+    "text_length": 1628,
+    "relative_image_path": "data/processed/pages/notice_5/page_4.png"
+  },
+  {
+    "notice_id": "notice_5",
+    "page_number": 5,
+    "has_text": true,
+    "text_length": 268,
+    "relative_image_path": "data/processed/pages/notice_5/page_5.png"
+  },
+  {
+    "notice_id": "notice_5",
+    "page_number": 6,
+    "has_text": true,
+    "text_length": 2012,
+    "relative_image_path": "data/processed/pages/notice_5/page_6.png"
+  },
+  {
+    "notice_id": "notice_5",
+    "page_number": 7,
+    "has_text": true,
+    "text_length": 842,
+    "relative_image_path": "data/processed/pages/notice_5/page_7.png"
+  },
+  {
+    "notice_id": "notice_5",
+    "page_number": 8,
+    "has_text": true,
+    "text_length": 1053,
+    "relative_image_path": "data/processed/pages/notice_5/page_8.png"
+  },
+  {
+    "notice_id": "notice_5",
+    "page_number": 9,
+    "has_text": true,
+    "text_length": 620,
+    "relative_image_path": "data/processed/pages/notice_5/page_9.png"
+  },
+  {
+    "notice_id": "notice_5",
+    "page_number": 10,
+    "has_text": true,
+    "text_length": 2161,
+    "relative_image_path": "data/processed/pages/notice_5/page_10.png"
+  },
+  {
+    "notice_id": "notice_5",
+    "page_number": 11,
+    "has_text": true,
+    "text_length": 1878,
+    "relative_image_path": "data/processed/pages/notice_5/page_11.png"
+  },
+  {
+    "notice_id": "notice_5",
+    "page_number": 12,
+    "has_text": true,
+    "text_length": 947,
+    "relative_image_path": "data/processed/pages/notice_5/page_12.png"
+  },
+  {
+    "notice_id": "notice_5",
+    "page_number": 13,
+    "has_text": true,
+    "text_length": 1654,
+    "relative_image_path": "data/processed/pages/notice_5/page_13.png"
+  },
+  {
+    "notice_id": "notice_5",
+    "page_number": 14,
+    "has_text": true,
+    "text_length": 1687,
+    "relative_image_path": "data/processed/pages/notice_5/page_14.png"
+  },
+  {
+    "notice_id": "notice_5",
+    "page_number": 15,
+    "has_text": true,
+    "text_length": 2449,
+    "relative_image_path": "data/processed/pages/notice_5/page_15.png"
+  },
+  {
+    "notice_id": "notice_5",
+    "page_number": 16,
+    "has_text": true,
+    "text_length": 1820,
+    "relative_image_path": "data/processed/pages/notice_5/page_16.png"
+  },
+  {
+    "notice_id": "notice_6",
+    "page_number": 1,
+    "has_text": true,
+    "text_length": 2462,
+    "relative_image_path": "data/processed/pages/notice_6/page_1.png"
+  },
+  {
+    "notice_id": "notice_7",
+    "page_number": 1,
+    "has_text": true,
+    "text_length": 1817,
+    "relative_image_path": "data/processed/pages/notice_7/page_1.png"
+  },
+  {
+    "notice_id": "notice_7",
+    "page_number": 2,
+    "has_text": true,
+    "text_length": 1650,
+    "relative_image_path": "data/processed/pages/notice_7/page_2.png"
+  },
+  {
+    "notice_id": "notice_7",
+    "page_number": 3,
+    "has_text": true,
+    "text_length": 1753,
+    "relative_image_path": "data/processed/pages/notice_7/page_3.png"
+  },
+  {
+    "notice_id": "notice_7",
+    "page_number": 4,
+    "has_text": true,
+    "text_length": 832,
+    "relative_image_path": "data/processed/pages/notice_7/page_4.png"
+  }
+]

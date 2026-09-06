@@ -1,0 +1,31 @@
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Caches & Environments
+.pytest_cache/
+.coverage
+htmlcov/
+.env
+.env.local
+.venv
+venv/
+ENV/
+
+# Security - Never commit API Keys
+data/keys.json
+keys.json
+
+# Node & Frontend Build Dependencies
+frontend/node_modules/
+node_modules/
+frontend/dist/
+.vite/
+
+# IDE & OS Files
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+*.log

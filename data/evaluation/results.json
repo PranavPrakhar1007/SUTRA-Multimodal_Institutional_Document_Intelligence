@@ -1,0 +1,1731 @@
+{
+  "benchmark_version": "2026-09-06-colpali-gpu-vlm",
+  "evaluation_scope": "retrieval_only",
+  "total_queries": 23,
+  "positive_queries": 21,
+  "negative_queries": 2,
+  "corpus_pages": 25,
+  "summary_metrics": {
+    "text_baseline": {
+      "positive_query_count": 21,
+      "negative_query_count": 2,
+      "doc_top1_accuracy": 1.0,
+      "page_hit_at_1": 0.9524,
+      "page_hit_at_3": 1.0,
+      "page_hit_at_5": 1.0,
+      "page_mrr": 0.9762,
+      "avg_retrieval_latency_ms": 1454.98
+    },
+    "visual_colpali_vlm": {
+      "positive_query_count": 21,
+      "negative_query_count": 2,
+      "doc_top1_accuracy": 1.0,
+      "page_hit_at_1": 1.0,
+      "page_hit_at_3": 1.0,
+      "page_hit_at_5": 1.0,
+      "page_mrr": 1.0,
+      "avg_retrieval_latency_ms": 1517.76
+    },
+    "hybrid_rrf_baseline": {
+      "positive_query_count": 21,
+      "negative_query_count": 2,
+      "doc_top1_accuracy": 1.0,
+      "page_hit_at_1": 1.0,
+      "page_hit_at_3": 1.0,
+      "page_hit_at_5": 1.0,
+      "page_mrr": 1.0,
+      "avg_retrieval_latency_ms": 136.2
+    },
+    "hybrid_reranked": {
+      "positive_query_count": 21,
+      "negative_query_count": 2,
+      "doc_top1_accuracy": 1.0,
+      "page_hit_at_1": 0.9524,
+      "page_hit_at_3": 1.0,
+      "page_hit_at_5": 1.0,
+      "page_mrr": 0.9762,
+      "avg_retrieval_latency_ms": 136.44
+    }
+  },
+  "results": [
+    {
+      "query_id": "Q01",
+      "question": "Who is the Chairman of the Student Council Selection Committee?",
+      "expected_document": "notice_1.pdf",
+      "expected_page": 1,
+      "is_negative": false,
+      "modes": {
+        "text_baseline": {
+          "top_result": {
+            "notice_id": "notice_1",
+            "page_number": 1,
+            "score": 0.0328
+          },
+          "correct_document_retrieved": true,
+          "correct_page_retrieved": true,
+          "doc_rank": 1,
+          "page_rank": 1,
+          "hit1_page": true,
+          "hit3_page": true,
+          "hit5_page": true,
+          "mrr_page": 1.0,
+          "retrieval_time_ms": 30399.86
+        },
+        "visual_colpali_vlm": {
+          "top_result": {
+            "notice_id": "notice_1",
+            "page_number": 1,
+            "score": 16.4394
+          },
+          "correct_document_retrieved": true,
+          "correct_page_retrieved": true,
+          "doc_rank": 1,
+          "page_rank": 1,
+          "hit1_page": true,
+          "hit3_page": true,
+          "hit5_page": true,
+          "mrr_page": 1.0,
+          "retrieval_time_ms": 29316.69
+        },
+        "hybrid_rrf_baseline": {
+          "top_result": {
+            "notice_id": "notice_1",
+            "page_number": 1,
+            "score": 0.0164
+          },
+          "correct_document_retrieved": true,
+          "correct_page_retrieved": true,
+          "doc_rank": 1,
+          "page_rank": 1,
+          "hit1_page": true,
+          "hit3_page": true,
+          "hit5_page": true,
+          "mrr_page": 1.0,
+          "retrieval_time_ms": 129.14
+        },
+        "hybrid_reranked": {
+          "top_result": {
+            "notice_id": "notice_1",
+            "page_number": 1,
+            "score": 1.0
+          },
+          "correct_document_retrieved": true,
+          "correct_page_retrieved": true,
+          "doc_rank": 1,
+          "page_rank": 1,
+          "hit1_page": true,
+          "hit3_page": true,
+          "hit5_page": true,
+          "mrr_page": 1.0,
+          "retrieval_time_ms": 149.09
+        }
+      }
+    },
+    {
+      "query_id": "Q02",
+      "question": "Who is the President of the Student Council for 2026-27?",
+      "expected_document": "notice_2.pdf",
+      "expected_page": 1,
+      "is_negative": false,
+      "modes": {
+        "text_baseline": {
+          "top_result": {
+            "notice_id": "notice_2",
+            "page_number": 1,
+            "score": 0.0325
+          },
+          "correct_document_retrieved": true,
+          "correct_page_retrieved": true,
+          "doc_rank": 1,
+          "page_rank": 1,
+          "hit1_page": true,
+          "hit3_page": true,
+          "hit5_page": true,
+          "mrr_page": 1.0,
+          "retrieval_time_ms": 8.94
+        },
+        "visual_colpali_vlm": {
+          "top_result": {
+            "notice_id": "notice_2",
+            "page_number": 1,
+            "score": 20.2221
+          },
+          "correct_document_retrieved": true,
+          "correct_page_retrieved": true,
+          "doc_rank": 1,
+          "page_rank": 1,
+          "hit1_page": true,
+          "hit3_page": true,
+          "hit5_page": true,
+          "mrr_page": 1.0,
+          "retrieval_time_ms": 145.31
+        },
+        "hybrid_rrf_baseline": {
+          "top_result": {
+            "notice_id": "notice_2",
+            "page_number": 1,
+            "score": 0.0164
+          },
+          "correct_document_retrieved": true,
+          "correct_page_retrieved": true,
+          "doc_rank": 1,
+          "page_rank": 1,
+          "hit1_page": true,
+          "hit3_page": true,
+          "hit5_page": true,
+          "mrr_page": 1.0,
+          "retrieval_time_ms": 159.57
+        },
+        "hybrid_reranked": {
+          "top_result": {
+            "notice_id": "notice_2",
+            "page_number": 1,
+            "score": 1.0
+          },
+          "correct_document_retrieved": true,
+          "correct_page_retrieved": true,
+          "doc_rank": 1,
+          "page_rank": 1,
+          "hit1_page": true,
+          "hit3_page": true,
+          "hit5_page": true,
+          "mrr_page": 1.0,
+          "retrieval_time_ms": 141.1
+        }
+      }
+    },
+    {
+      "query_id": "Q03",
+      "question": "What is the remuneration for guest coaches?",
+      "expected_document": "notice_3.pdf",
+      "expected_page": 1,
+      "is_negative": false,
+      "modes": {
+        "text_baseline": {
+          "top_result": {
+            "notice_id": "notice_3",
+            "page_number": 1,
+            "score": 0.0328
+          },
+          "correct_document_retrieved": true,
+          "correct_page_retrieved": true,
+          "doc_rank": 1,
+          "page_rank": 1,
+          "hit1_page": true,
+          "hit3_page": true,
+          "hit5_page": true,
+          "mrr_page": 1.0,
+          "retrieval_time_ms": 7.62
+        },
+        "visual_colpali_vlm": {
+          "top_result": {
+            "notice_id": "notice_3",
+            "page_number": 1,
+            "score": 16.4399
+          },
+          "correct_document_retrieved": true,
+          "correct_page_retrieved": true,
+          "doc_rank": 1,
+          "page_rank": 1,
+          "hit1_page": true,
+          "hit3_page": true,
+          "hit5_page": true,
+          "mrr_page": 1.0,
+          "retrieval_time_ms": 128.51
+        },
+        "hybrid_rrf_baseline": {
+          "top_result": {
+            "notice_id": "notice_3",
+            "page_number": 1,
+            "score": 0.0164
+          },
+          "correct_document_retrieved": true,
+          "correct_page_retrieved": true,
+          "doc_rank": 1,
+          "page_rank": 1,
+          "hit1_page": true,
+          "hit3_page": true,
+          "hit5_page": true,
+          "mrr_page": 1.0,
+          "retrieval_time_ms": 131.04
+        },
+        "hybrid_reranked": {
+          "top_result": {
+            "notice_id": "notice_3",
+            "page_number": 1,
+            "score": 1.0
+          },
+          "correct_document_retrieved": true,
+          "correct_page_retrieved": true,
+          "doc_rank": 1,
+          "page_rank": 1,
+          "hit1_page": true,
+          "hit3_page": true,
+          "hit5_page": true,
+          "mrr_page": 1.0,
+          "retrieval_time_ms": 126.23
+        }
+      }
+    },
+    {
+      "query_id": "Q04",
+      "question": "When is the selection of Captains and Vice-Captains?",
+      "expected_document": "notice_4.pdf",
+      "expected_page": 1,
+      "is_negative": false,
+      "modes": {
+        "text_baseline": {
+          "top_result": {
+            "notice_id": "notice_4",
+            "page_number": 1,
+            "score": 0.0578
+          },
+          "correct_document_retrieved": true,
+          "correct_page_retrieved": true,
+          "doc_rank": 1,
+          "page_rank": 1,
+          "hit1_page": true,
+          "hit3_page": true,
+          "hit5_page": true,
+          "mrr_page": 1.0,
+          "retrieval_time_ms": 6.85
+        },
+        "visual_colpali_vlm": {
+          "top_result": {
+            "notice_id": "notice_4",
+            "page_number": 1,
+            "score": 19.0947
+          },
+          "correct_document_retrieved": true,
+          "correct_page_retrieved": true,
+          "doc_rank": 1,
+          "page_rank": 1,
+          "hit1_page": true,
+          "hit3_page": true,
+          "hit5_page": true,
+          "mrr_page": 1.0,
+          "retrieval_time_ms": 120.36
+        },
+        "hybrid_rrf_baseline": {
+          "top_result": {
+            "notice_id": "notice_4",
+            "page_number": 1,
+            "score": 0.0164
+          },
+          "correct_document_retrieved": true,
+          "correct_page_retrieved": true,
+          "doc_rank": 1,
+          "page_rank": 1,
+          "hit1_page": true,
+          "hit3_page": true,
+          "hit5_page": true,
+          "mrr_page": 1.0,
+          "retrieval_time_ms": 129.4
+        },
+        "hybrid_reranked": {
+          "top_result": {
+            "notice_id": "notice_4",
+            "page_number": 1,
+            "score": 1.0
+          },
+          "correct_document_retrieved": true,
+          "correct_page_retrieved": true,
+          "doc_rank": 1,
+          "page_rank": 1,
+          "hit1_page": true,
+          "hit3_page": true,
+          "hit5_page": true,
+          "mrr_page": 1.0,
+          "retrieval_time_ms": 128.57
+        }
+      }
+    },
+    {
+      "query_id": "Q05",
+      "question": "What is the reporting date for M.Tech admission?",
+      "expected_document": "notice_5.pdf",
+      "expected_page": 1,
+      "is_negative": false,
+      "modes": {
+        "text_baseline": {
+          "top_result": {
+            "notice_id": "notice_5",
+            "page_number": 1,
+            "score": 0.0328
+          },
+          "correct_document_retrieved": true,
+          "correct_page_retrieved": true,
+          "doc_rank": 1,
+          "page_rank": 1,
+          "hit1_page": true,
+          "hit3_page": true,
+          "hit5_page": true,
+          "mrr_page": 1.0,
+          "retrieval_time_ms": 7.35
+        },
+        "visual_colpali_vlm": {
+          "top_result": {
+            "notice_id": "notice_5",
+            "page_number": 1,
+            "score": 14.8804
+          },
+          "correct_document_retrieved": true,
+          "correct_page_retrieved": true,
+          "doc_rank": 1,
+          "page_rank": 1,
+          "hit1_page": true,
+          "hit3_page": true,
+          "hit5_page": true,
+          "mrr_page": 1.0,
+          "retrieval_time_ms": 126.05
+        },
+        "hybrid_rrf_baseline": {
+          "top_result": {
+            "notice_id": "notice_5",
+            "page_number": 1,
+            "score": 0.0164
+          },
+          "correct_document_retrieved": true,
+          "correct_page_retrieved": true,
+          "doc_rank": 1,
+          "page_rank": 1,
+          "hit1_page": true,
+          "hit3_page": true,
+          "hit5_page": true,
+          "mrr_page": 1.0,
+          "retrieval_time_ms": 131.73
+        },
+        "hybrid_reranked": {
+          "top_result": {
+            "notice_id": "notice_5",
+            "page_number": 1,
+            "score": 1.0
+          },
+          "correct_document_retrieved": true,
+          "correct_page_retrieved": true,
+          "doc_rank": 1,
+          "page_rank": 1,
+          "hit1_page": true,
+          "hit3_page": true,
+          "hit5_page": true,
+          "mrr_page": 1.0,
+          "retrieval_time_ms": 129.19
+        }
+      }
+    },
+    {
+      "query_id": "Q06",
+      "question": "What is the IFSC code for fee payment?",
+      "expected_document": "notice_6.pdf",
+      "expected_page": 1,
+      "is_negative": false,
+      "modes": {
+        "text_baseline": {
+          "top_result": {
+            "notice_id": "notice_6",
+            "page_number": 1,
+            "score": 0.0328
+          },
+          "correct_document_retrieved": true,
+          "correct_page_retrieved": true,
+          "doc_rank": 1,
+          "page_rank": 1,
+          "hit1_page": true,
+          "hit3_page": true,
+          "hit5_page": true,
+          "mrr_page": 1.0,
+          "retrieval_time_ms": 7.11
+        },
+        "visual_colpali_vlm": {
+          "top_result": {
+            "notice_id": "notice_6",
+            "page_number": 1,
+            "score": 14.7098
+          },
+          "correct_document_retrieved": true,
+          "correct_page_retrieved": true,
+          "doc_rank": 1,
+          "page_rank": 1,
+          "hit1_page": true,
+          "hit3_page": true,
+          "hit5_page": true,
+          "mrr_page": 1.0,
+          "retrieval_time_ms": 121.35
+        },
+        "hybrid_rrf_baseline": {
+          "top_result": {
+            "notice_id": "notice_6",
+            "page_number": 1,
+            "score": 0.0164
+          },
+          "correct_document_retrieved": true,
+          "correct_page_retrieved": true,
+          "doc_rank": 1,
+          "page_rank": 1,
+          "hit1_page": true,
+          "hit3_page": true,
+          "hit5_page": true,
+          "mrr_page": 1.0,
+          "retrieval_time_ms": 131.63
+        },
+        "hybrid_reranked": {
+          "top_result": {
+            "notice_id": "notice_6",
+            "page_number": 1,
+            "score": 1.0
+          },
+          "correct_document_retrieved": true,
+          "correct_page_retrieved": true,
+          "doc_rank": 1,
+          "page_rank": 1,
+          "hit1_page": true,
+          "hit3_page": true,
+          "hit5_page": true,
+          "mrr_page": 1.0,
+          "retrieval_time_ms": 125.96
+        }
+      }
+    },
+    {
+      "query_id": "Q07",
+      "question": "What is the fellowship amount for JRF position?",
+      "expected_document": "notice_7.pdf",
+      "expected_page": 1,
+      "is_negative": false,
+      "modes": {
+        "text_baseline": {
+          "top_result": {
+            "notice_id": "notice_7",
+            "page_number": 1,
+            "score": 0.0414
+          },
+          "correct_document_retrieved": true,
+          "correct_page_retrieved": true,
+          "doc_rank": 1,
+          "page_rank": 1,
+          "hit1_page": true,
+          "hit3_page": true,
+          "hit5_page": true,
+          "mrr_page": 1.0,
+          "retrieval_time_ms": 6.85
+        },
+        "visual_colpali_vlm": {
+          "top_result": {
+            "notice_id": "notice_7",
+            "page_number": 1,
+            "score": 15.5519
+          },
+          "correct_document_retrieved": true,
+          "correct_page_retrieved": true,
+          "doc_rank": 1,
+          "page_rank": 1,
+          "hit1_page": true,
+          "hit3_page": true,
+          "hit5_page": true,
+          "mrr_page": 1.0,
+          "retrieval_time_ms": 120.76
+        },
+        "hybrid_rrf_baseline": {
+          "top_result": {
+            "notice_id": "notice_7",
+            "page_number": 1,
+            "score": 0.0164
+          },
+          "correct_document_retrieved": true,
+          "correct_page_retrieved": true,
+          "doc_rank": 1,
+          "page_rank": 1,
+          "hit1_page": true,
+          "hit3_page": true,
+          "hit5_page": true,
+          "mrr_page": 1.0,
+          "retrieval_time_ms": 126.32
+        },
+        "hybrid_reranked": {
+          "top_result": {
+            "notice_id": "notice_7",
+            "page_number": 1,
+            "score": 1.0
+          },
+          "correct_document_retrieved": true,
+          "correct_page_retrieved": true,
+          "doc_rank": 1,
+          "page_rank": 1,
+          "hit1_page": true,
+          "hit3_page": true,
+          "hit5_page": true,
+          "mrr_page": 1.0,
+          "retrieval_time_ms": 129.21
+        }
+      }
+    },
+    {
+      "query_id": "Q08",
+      "question": "What are the methods of semester fee payment?",
+      "expected_document": "notice_6.pdf",
+      "expected_page": 1,
+      "is_negative": false,
+      "modes": {
+        "text_baseline": {
+          "top_result": {
+            "notice_id": "notice_6",
+            "page_number": 1,
+            "score": 0.0328
+          },
+          "correct_document_retrieved": true,
+          "correct_page_retrieved": true,
+          "doc_rank": 1,
+          "page_rank": 1,
+          "hit1_page": true,
+          "hit3_page": true,
+          "hit5_page": true,
+          "mrr_page": 1.0,
+          "retrieval_time_ms": 7.05
+        },
+        "visual_colpali_vlm": {
+          "top_result": {
+            "notice_id": "notice_6",
+            "page_number": 1,
+            "score": 16.0155
+          },
+          "correct_document_retrieved": true,
+          "correct_page_retrieved": true,
+          "doc_rank": 1,
+          "page_rank": 1,
+          "hit1_page": true,
+          "hit3_page": true,
+          "hit5_page": true,
+          "mrr_page": 1.0,
+          "retrieval_time_ms": 127.37
+        },
+        "hybrid_rrf_baseline": {
+          "top_result": {
+            "notice_id": "notice_6",
+            "page_number": 1,
+            "score": 0.0164
+          },
+          "correct_document_retrieved": true,
+          "correct_page_retrieved": true,
+          "doc_rank": 1,
+          "page_rank": 1,
+          "hit1_page": true,
+          "hit3_page": true,
+          "hit5_page": true,
+          "mrr_page": 1.0,
+          "retrieval_time_ms": 127.32
+        },
+        "hybrid_reranked": {
+          "top_result": {
+            "notice_id": "notice_6",
+            "page_number": 1,
+            "score": 1.0
+          },
+          "correct_document_retrieved": true,
+          "correct_page_retrieved": true,
+          "doc_rank": 1,
+          "page_rank": 1,
+          "hit1_page": true,
+          "hit3_page": true,
+          "hit5_page": true,
+          "mrr_page": 1.0,
+          "retrieval_time_ms": 129.23
+        }
+      }
+    },
+    {
+      "query_id": "Q09",
+      "question": "What is the project title for the JRF position?",
+      "expected_document": "notice_7.pdf",
+      "expected_page": 1,
+      "is_negative": false,
+      "modes": {
+        "text_baseline": {
+          "top_result": {
+            "notice_id": "notice_7",
+            "page_number": 2,
+            "score": 0.0325
+          },
+          "correct_document_retrieved": true,
+          "correct_page_retrieved": false,
+          "doc_rank": 1,
+          "page_rank": 2,
+          "hit1_page": false,
+          "hit3_page": true,
+          "hit5_page": true,
+          "mrr_page": 0.5,
+          "retrieval_time_ms": 6.63
+        },
+        "visual_colpali_vlm": {
+          "top_result": {
+            "notice_id": "notice_7",
+            "page_number": 1,
+            "score": 16.622
+          },
+          "correct_document_retrieved": true,
+          "correct_page_retrieved": true,
+          "doc_rank": 1,
+          "page_rank": 1,
+          "hit1_page": true,
+          "hit3_page": true,
+          "hit5_page": true,
+          "mrr_page": 1.0,
+          "retrieval_time_ms": 119.4
+        },
+        "hybrid_rrf_baseline": {
+          "top_result": {
+            "notice_id": "notice_7",
+            "page_number": 1,
+            "score": 0.0163
+          },
+          "correct_document_retrieved": true,
+          "correct_page_retrieved": true,
+          "doc_rank": 1,
+          "page_rank": 1,
+          "hit1_page": true,
+          "hit3_page": true,
+          "hit5_page": true,
+          "mrr_page": 1.0,
+          "retrieval_time_ms": 127.91
+        },
+        "hybrid_reranked": {
+          "top_result": {
+            "notice_id": "notice_7",
+            "page_number": 2,
+            "score": 0.975
+          },
+          "correct_document_retrieved": true,
+          "correct_page_retrieved": false,
+          "doc_rank": 1,
+          "page_rank": 2,
+          "hit1_page": false,
+          "hit3_page": true,
+          "hit5_page": true,
+          "mrr_page": 0.5,
+          "retrieval_time_ms": 125.9
+        }
+      }
+    },
+    {
+      "query_id": "Q10",
+      "question": "How many sports need guest coaches?",
+      "expected_document": "notice_3.pdf",
+      "expected_page": 1,
+      "is_negative": false,
+      "modes": {
+        "text_baseline": {
+          "top_result": {
+            "notice_id": "notice_3",
+            "page_number": 1,
+            "score": 0.0578
+          },
+          "correct_document_retrieved": true,
+          "correct_page_retrieved": true,
+          "doc_rank": 1,
+          "page_rank": 1,
+          "hit1_page": true,
+          "hit3_page": true,
+          "hit5_page": true,
+          "mrr_page": 1.0,
+          "retrieval_time_ms": 7.28
+        },
+        "visual_colpali_vlm": {
+          "top_result": {
+            "notice_id": "notice_3",
+            "page_number": 1,
+            "score": 13.5463
+          },
+          "correct_document_retrieved": true,
+          "correct_page_retrieved": true,
+          "doc_rank": 1,
+          "page_rank": 1,
+          "hit1_page": true,
+          "hit3_page": true,
+          "hit5_page": true,
+          "mrr_page": 1.0,
+          "retrieval_time_ms": 119.19
+        },
+        "hybrid_rrf_baseline": {
+          "top_result": {
+            "notice_id": "notice_3",
+            "page_number": 1,
+            "score": 0.0164
+          },
+          "correct_document_retrieved": true,
+          "correct_page_retrieved": true,
+          "doc_rank": 1,
+          "page_rank": 1,
+          "hit1_page": true,
+          "hit3_page": true,
+          "hit5_page": true,
+          "mrr_page": 1.0,
+          "retrieval_time_ms": 126.41
+        },
+        "hybrid_reranked": {
+          "top_result": {
+            "notice_id": "notice_3",
+            "page_number": 1,
+            "score": 1.0
+          },
+          "correct_document_retrieved": true,
+          "correct_page_retrieved": true,
+          "doc_rank": 1,
+          "page_rank": 1,
+          "hit1_page": true,
+          "hit3_page": true,
+          "hit5_page": true,
+          "mrr_page": 1.0,
+          "retrieval_time_ms": 126.1
+        }
+      }
+    },
+    {
+      "query_id": "Q11",
+      "question": "Who is the Associate Dean SW nominated member on the selection committee?",
+      "expected_document": "notice_1.pdf",
+      "expected_page": 1,
+      "is_negative": false,
+      "modes": {
+        "text_baseline": {
+          "top_result": {
+            "notice_id": "notice_1",
+            "page_number": 1,
+            "score": 0.0578
+          },
+          "correct_document_retrieved": true,
+          "correct_page_retrieved": true,
+          "doc_rank": 1,
+          "page_rank": 1,
+          "hit1_page": true,
+          "hit3_page": true,
+          "hit5_page": true,
+          "mrr_page": 1.0,
+          "retrieval_time_ms": 7.2
+        },
+        "visual_colpali_vlm": {
+          "top_result": {
+            "notice_id": "notice_1",
+            "page_number": 1,
+            "score": 16.7623
+          },
+          "correct_document_retrieved": true,
+          "correct_page_retrieved": true,
+          "doc_rank": 1,
+          "page_rank": 1,
+          "hit1_page": true,
+          "hit3_page": true,
+          "hit5_page": true,
+          "mrr_page": 1.0,
+          "retrieval_time_ms": 119.8
+        },
+        "hybrid_rrf_baseline": {
+          "top_result": {
+            "notice_id": "notice_1",
+            "page_number": 1,
+            "score": 0.0164
+          },
+          "correct_document_retrieved": true,
+          "correct_page_retrieved": true,
+          "doc_rank": 1,
+          "page_rank": 1,
+          "hit1_page": true,
+          "hit3_page": true,
+          "hit5_page": true,
+          "mrr_page": 1.0,
+          "retrieval_time_ms": 125.79
+        },
+        "hybrid_reranked": {
+          "top_result": {
+            "notice_id": "notice_1",
+            "page_number": 1,
+            "score": 1.0
+          },
+          "correct_document_retrieved": true,
+          "correct_page_retrieved": true,
+          "doc_rank": 1,
+          "page_rank": 1,
+          "hit1_page": true,
+          "hit3_page": true,
+          "hit5_page": true,
+          "mrr_page": 1.0,
+          "retrieval_time_ms": 130.13
+        }
+      }
+    },
+    {
+      "query_id": "Q12",
+      "question": "Who is the Female candidate selected for President / General Secretary post?",
+      "expected_document": "notice_2.pdf",
+      "expected_page": 1,
+      "is_negative": false,
+      "modes": {
+        "text_baseline": {
+          "top_result": {
+            "notice_id": "notice_2",
+            "page_number": 1,
+            "score": 0.0578
+          },
+          "correct_document_retrieved": true,
+          "correct_page_retrieved": true,
+          "doc_rank": 1,
+          "page_rank": 1,
+          "hit1_page": true,
+          "hit3_page": true,
+          "hit5_page": true,
+          "mrr_page": 1.0,
+          "retrieval_time_ms": 7.46
+        },
+        "visual_colpali_vlm": {
+          "top_result": {
+            "notice_id": "notice_2",
+            "page_number": 1,
+            "score": 15.8733
+          },
+          "correct_document_retrieved": true,
+          "correct_page_retrieved": true,
+          "doc_rank": 1,
+          "page_rank": 1,
+          "hit1_page": true,
+          "hit3_page": true,
+          "hit5_page": true,
+          "mrr_page": 1.0,
+          "retrieval_time_ms": 125.3
+        },
+        "hybrid_rrf_baseline": {
+          "top_result": {
+            "notice_id": "notice_2",
+            "page_number": 1,
+            "score": 0.0164
+          },
+          "correct_document_retrieved": true,
+          "correct_page_retrieved": true,
+          "doc_rank": 1,
+          "page_rank": 1,
+          "hit1_page": true,
+          "hit3_page": true,
+          "hit5_page": true,
+          "mrr_page": 1.0,
+          "retrieval_time_ms": 134.2
+        },
+        "hybrid_reranked": {
+          "top_result": {
+            "notice_id": "notice_2",
+            "page_number": 1,
+            "score": 1.0
+          },
+          "correct_document_retrieved": true,
+          "correct_page_retrieved": true,
+          "doc_rank": 1,
+          "page_rank": 1,
+          "hit1_page": true,
+          "hit3_page": true,
+          "hit5_page": true,
+          "mrr_page": 1.0,
+          "retrieval_time_ms": 132.99
+        }
+      }
+    },
+    {
+      "query_id": "Q13",
+      "question": "What is the date and venue of the walk-in interview for guest coaches?",
+      "expected_document": "notice_3.pdf",
+      "expected_page": 1,
+      "is_negative": false,
+      "modes": {
+        "text_baseline": {
+          "top_result": {
+            "notice_id": "notice_3",
+            "page_number": 1,
+            "score": 0.0575
+          },
+          "correct_document_retrieved": true,
+          "correct_page_retrieved": true,
+          "doc_rank": 1,
+          "page_rank": 1,
+          "hit1_page": true,
+          "hit3_page": true,
+          "hit5_page": true,
+          "mrr_page": 1.0,
+          "retrieval_time_ms": 9.74
+        },
+        "visual_colpali_vlm": {
+          "top_result": {
+            "notice_id": "notice_3",
+            "page_number": 1,
+            "score": 19.5154
+          },
+          "correct_document_retrieved": true,
+          "correct_page_retrieved": true,
+          "doc_rank": 1,
+          "page_rank": 1,
+          "hit1_page": true,
+          "hit3_page": true,
+          "hit5_page": true,
+          "mrr_page": 1.0,
+          "retrieval_time_ms": 128.03
+        },
+        "hybrid_rrf_baseline": {
+          "top_result": {
+            "notice_id": "notice_3",
+            "page_number": 1,
+            "score": 0.0164
+          },
+          "correct_document_retrieved": true,
+          "correct_page_retrieved": true,
+          "doc_rank": 1,
+          "page_rank": 1,
+          "hit1_page": true,
+          "hit3_page": true,
+          "hit5_page": true,
+          "mrr_page": 1.0,
+          "retrieval_time_ms": 132.44
+        },
+        "hybrid_reranked": {
+          "top_result": {
+            "notice_id": "notice_3",
+            "page_number": 1,
+            "score": 1.0
+          },
+          "correct_document_retrieved": true,
+          "correct_page_retrieved": true,
+          "doc_rank": 1,
+          "page_rank": 1,
+          "hit1_page": true,
+          "hit3_page": true,
+          "hit5_page": true,
+          "mrr_page": 1.0,
+          "retrieval_time_ms": 129.64
+        }
+      }
+    },
+    {
+      "query_id": "Q14",
+      "question": "What is the maximum engagement hours per day for Cricket guest coach?",
+      "expected_document": "notice_3.pdf",
+      "expected_page": 1,
+      "is_negative": false,
+      "modes": {
+        "text_baseline": {
+          "top_result": {
+            "notice_id": "notice_3",
+            "page_number": 1,
+            "score": 0.0578
+          },
+          "correct_document_retrieved": true,
+          "correct_page_retrieved": true,
+          "doc_rank": 1,
+          "page_rank": 1,
+          "hit1_page": true,
+          "hit3_page": true,
+          "hit5_page": true,
+          "mrr_page": 1.0,
+          "retrieval_time_ms": 7.2
+        },
+        "visual_colpali_vlm": {
+          "top_result": {
+            "notice_id": "notice_3",
+            "page_number": 1,
+            "score": 17.8174
+          },
+          "correct_document_retrieved": true,
+          "correct_page_retrieved": true,
+          "doc_rank": 1,
+          "page_rank": 1,
+          "hit1_page": true,
+          "hit3_page": true,
+          "hit5_page": true,
+          "mrr_page": 1.0,
+          "retrieval_time_ms": 120.5
+        },
+        "hybrid_rrf_baseline": {
+          "top_result": {
+            "notice_id": "notice_3",
+            "page_number": 1,
+            "score": 0.0164
+          },
+          "correct_document_retrieved": true,
+          "correct_page_retrieved": true,
+          "doc_rank": 1,
+          "page_rank": 1,
+          "hit1_page": true,
+          "hit3_page": true,
+          "hit5_page": true,
+          "mrr_page": 1.0,
+          "retrieval_time_ms": 127.82
+        },
+        "hybrid_reranked": {
+          "top_result": {
+            "notice_id": "notice_3",
+            "page_number": 1,
+            "score": 1.0
+          },
+          "correct_document_retrieved": true,
+          "correct_page_retrieved": true,
+          "doc_rank": 1,
+          "page_rank": 1,
+          "hit1_page": true,
+          "hit3_page": true,
+          "hit5_page": true,
+          "mrr_page": 1.0,
+          "retrieval_time_ms": 134.63
+        }
+      }
+    },
+    {
+      "query_id": "Q15",
+      "question": "What is the portal link for direct fee payment through HDFC Qfix?",
+      "expected_document": "notice_6.pdf",
+      "expected_page": 1,
+      "is_negative": false,
+      "modes": {
+        "text_baseline": {
+          "top_result": {
+            "notice_id": "notice_6",
+            "page_number": 1,
+            "score": 0.0578
+          },
+          "correct_document_retrieved": true,
+          "correct_page_retrieved": true,
+          "doc_rank": 1,
+          "page_rank": 1,
+          "hit1_page": true,
+          "hit3_page": true,
+          "hit5_page": true,
+          "mrr_page": 1.0,
+          "retrieval_time_ms": 7.52
+        },
+        "visual_colpali_vlm": {
+          "top_result": {
+            "notice_id": "notice_6",
+            "page_number": 1,
+            "score": 18.8514
+          },
+          "correct_document_retrieved": true,
+          "correct_page_retrieved": true,
+          "doc_rank": 1,
+          "page_rank": 1,
+          "hit1_page": true,
+          "hit3_page": true,
+          "hit5_page": true,
+          "mrr_page": 1.0,
+          "retrieval_time_ms": 125.42
+        },
+        "hybrid_rrf_baseline": {
+          "top_result": {
+            "notice_id": "notice_6",
+            "page_number": 1,
+            "score": 0.0164
+          },
+          "correct_document_retrieved": true,
+          "correct_page_retrieved": true,
+          "doc_rank": 1,
+          "page_rank": 1,
+          "hit1_page": true,
+          "hit3_page": true,
+          "hit5_page": true,
+          "mrr_page": 1.0,
+          "retrieval_time_ms": 132.9
+        },
+        "hybrid_reranked": {
+          "top_result": {
+            "notice_id": "notice_6",
+            "page_number": 1,
+            "score": 1.0
+          },
+          "correct_document_retrieved": true,
+          "correct_page_retrieved": true,
+          "doc_rank": 1,
+          "page_rank": 1,
+          "hit1_page": true,
+          "hit3_page": true,
+          "hit5_page": true,
+          "mrr_page": 1.0,
+          "retrieval_time_ms": 137.86
+        }
+      }
+    },
+    {
+      "query_id": "Q16",
+      "question": "Who is the Project Principal Investigator (PI) for the JRF recruitment?",
+      "expected_document": "notice_7.pdf",
+      "expected_page": 1,
+      "is_negative": false,
+      "modes": {
+        "text_baseline": {
+          "top_result": {
+            "notice_id": "notice_7",
+            "page_number": 1,
+            "score": 0.0559
+          },
+          "correct_document_retrieved": true,
+          "correct_page_retrieved": true,
+          "doc_rank": 1,
+          "page_rank": 1,
+          "hit1_page": true,
+          "hit3_page": true,
+          "hit5_page": true,
+          "mrr_page": 1.0,
+          "retrieval_time_ms": 7.52
+        },
+        "visual_colpali_vlm": {
+          "top_result": {
+            "notice_id": "notice_7",
+            "page_number": 1,
+            "score": 16.7359
+          },
+          "correct_document_retrieved": true,
+          "correct_page_retrieved": true,
+          "doc_rank": 1,
+          "page_rank": 1,
+          "hit1_page": true,
+          "hit3_page": true,
+          "hit5_page": true,
+          "mrr_page": 1.0,
+          "retrieval_time_ms": 123.49
+        },
+        "hybrid_rrf_baseline": {
+          "top_result": {
+            "notice_id": "notice_7",
+            "page_number": 1,
+            "score": 0.0164
+          },
+          "correct_document_retrieved": true,
+          "correct_page_retrieved": true,
+          "doc_rank": 1,
+          "page_rank": 1,
+          "hit1_page": true,
+          "hit3_page": true,
+          "hit5_page": true,
+          "mrr_page": 1.0,
+          "retrieval_time_ms": 134.53
+        },
+        "hybrid_reranked": {
+          "top_result": {
+            "notice_id": "notice_7",
+            "page_number": 1,
+            "score": 1.0
+          },
+          "correct_document_retrieved": true,
+          "correct_page_retrieved": true,
+          "doc_rank": 1,
+          "page_rank": 1,
+          "hit1_page": true,
+          "hit3_page": true,
+          "hit5_page": true,
+          "mrr_page": 1.0,
+          "retrieval_time_ms": 130.03
+        }
+      }
+    },
+    {
+      "query_id": "Q17",
+      "question": "What is the last date to submit the JRF application form?",
+      "expected_document": "notice_7.pdf",
+      "expected_page": 2,
+      "is_negative": false,
+      "modes": {
+        "text_baseline": {
+          "top_result": {
+            "notice_id": "notice_7",
+            "page_number": 2,
+            "score": 0.0578
+          },
+          "correct_document_retrieved": true,
+          "correct_page_retrieved": true,
+          "doc_rank": 1,
+          "page_rank": 1,
+          "hit1_page": true,
+          "hit3_page": true,
+          "hit5_page": true,
+          "mrr_page": 1.0,
+          "retrieval_time_ms": 7.24
+        },
+        "visual_colpali_vlm": {
+          "top_result": {
+            "notice_id": "notice_7",
+            "page_number": 2,
+            "score": 16.8643
+          },
+          "correct_document_retrieved": true,
+          "correct_page_retrieved": true,
+          "doc_rank": 1,
+          "page_rank": 1,
+          "hit1_page": true,
+          "hit3_page": true,
+          "hit5_page": true,
+          "mrr_page": 1.0,
+          "retrieval_time_ms": 124.16
+        },
+        "hybrid_rrf_baseline": {
+          "top_result": {
+            "notice_id": "notice_7",
+            "page_number": 2,
+            "score": 0.0164
+          },
+          "correct_document_retrieved": true,
+          "correct_page_retrieved": true,
+          "doc_rank": 1,
+          "page_rank": 1,
+          "hit1_page": true,
+          "hit3_page": true,
+          "hit5_page": true,
+          "mrr_page": 1.0,
+          "retrieval_time_ms": 145.1
+        },
+        "hybrid_reranked": {
+          "top_result": {
+            "notice_id": "notice_7",
+            "page_number": 2,
+            "score": 1.0
+          },
+          "correct_document_retrieved": true,
+          "correct_page_retrieved": true,
+          "doc_rank": 1,
+          "page_rank": 1,
+          "hit1_page": true,
+          "hit3_page": true,
+          "hit5_page": true,
+          "mrr_page": 1.0,
+          "retrieval_time_ms": 130.93
+        }
+      }
+    },
+    {
+      "query_id": "Q18",
+      "question": "Who are the Hostel Wardens nominated for the student council selection committee?",
+      "expected_document": "notice_1.pdf",
+      "expected_page": 1,
+      "is_negative": false,
+      "modes": {
+        "text_baseline": {
+          "top_result": {
+            "notice_id": "notice_1",
+            "page_number": 1,
+            "score": 0.0578
+          },
+          "correct_document_retrieved": true,
+          "correct_page_retrieved": true,
+          "doc_rank": 1,
+          "page_rank": 1,
+          "hit1_page": true,
+          "hit3_page": true,
+          "hit5_page": true,
+          "mrr_page": 1.0,
+          "retrieval_time_ms": 7.0
+        },
+        "visual_colpali_vlm": {
+          "top_result": {
+            "notice_id": "notice_1",
+            "page_number": 1,
+            "score": 16.0866
+          },
+          "correct_document_retrieved": true,
+          "correct_page_retrieved": true,
+          "doc_rank": 1,
+          "page_rank": 1,
+          "hit1_page": true,
+          "hit3_page": true,
+          "hit5_page": true,
+          "mrr_page": 1.0,
+          "retrieval_time_ms": 128.48
+        },
+        "hybrid_rrf_baseline": {
+          "top_result": {
+            "notice_id": "notice_1",
+            "page_number": 1,
+            "score": 0.0164
+          },
+          "correct_document_retrieved": true,
+          "correct_page_retrieved": true,
+          "doc_rank": 1,
+          "page_rank": 1,
+          "hit1_page": true,
+          "hit3_page": true,
+          "hit5_page": true,
+          "mrr_page": 1.0,
+          "retrieval_time_ms": 133.92
+        },
+        "hybrid_reranked": {
+          "top_result": {
+            "notice_id": "notice_1",
+            "page_number": 1,
+            "score": 1.0
+          },
+          "correct_document_retrieved": true,
+          "correct_page_retrieved": true,
+          "doc_rank": 1,
+          "page_rank": 1,
+          "hit1_page": true,
+          "hit3_page": true,
+          "hit5_page": true,
+          "mrr_page": 1.0,
+          "retrieval_time_ms": 200.79
+        }
+      }
+    },
+    {
+      "query_id": "Q19",
+      "question": "What is the deadline to submit loan details via Google Form for fee payment?",
+      "expected_document": "notice_6.pdf",
+      "expected_page": 1,
+      "is_negative": false,
+      "modes": {
+        "text_baseline": {
+          "top_result": {
+            "notice_id": "notice_6",
+            "page_number": 1,
+            "score": 0.0578
+          },
+          "correct_document_retrieved": true,
+          "correct_page_retrieved": true,
+          "doc_rank": 1,
+          "page_rank": 1,
+          "hit1_page": true,
+          "hit3_page": true,
+          "hit5_page": true,
+          "mrr_page": 1.0,
+          "retrieval_time_ms": 13.2
+        },
+        "visual_colpali_vlm": {
+          "top_result": {
+            "notice_id": "notice_6",
+            "page_number": 1,
+            "score": 17.157
+          },
+          "correct_document_retrieved": true,
+          "correct_page_retrieved": true,
+          "doc_rank": 1,
+          "page_rank": 1,
+          "hit1_page": true,
+          "hit3_page": true,
+          "hit5_page": true,
+          "mrr_page": 1.0,
+          "retrieval_time_ms": 179.69
+        },
+        "hybrid_rrf_baseline": {
+          "top_result": {
+            "notice_id": "notice_6",
+            "page_number": 1,
+            "score": 0.0164
+          },
+          "correct_document_retrieved": true,
+          "correct_page_retrieved": true,
+          "doc_rank": 1,
+          "page_rank": 1,
+          "hit1_page": true,
+          "hit3_page": true,
+          "hit5_page": true,
+          "mrr_page": 1.0,
+          "retrieval_time_ms": 142.26
+        },
+        "hybrid_reranked": {
+          "top_result": {
+            "notice_id": "notice_6",
+            "page_number": 1,
+            "score": 1.0
+          },
+          "correct_document_retrieved": true,
+          "correct_page_retrieved": true,
+          "doc_rank": 1,
+          "page_rank": 1,
+          "hit1_page": true,
+          "hit3_page": true,
+          "hit5_page": true,
+          "mrr_page": 1.0,
+          "retrieval_time_ms": 138.2
+        }
+      }
+    },
+    {
+      "query_id": "Q20",
+      "question": "Who are the Professors in charge nominated from Cultural, Technical, and Sports committees?",
+      "expected_document": "notice_1.pdf",
+      "expected_page": 1,
+      "is_negative": false,
+      "modes": {
+        "text_baseline": {
+          "top_result": {
+            "notice_id": "notice_1",
+            "page_number": 1,
+            "score": 0.0328
+          },
+          "correct_document_retrieved": true,
+          "correct_page_retrieved": true,
+          "doc_rank": 1,
+          "page_rank": 1,
+          "hit1_page": true,
+          "hit3_page": true,
+          "hit5_page": true,
+          "mrr_page": 1.0,
+          "retrieval_time_ms": 7.7
+        },
+        "visual_colpali_vlm": {
+          "top_result": {
+            "notice_id": "notice_1",
+            "page_number": 1,
+            "score": 18.3117
+          },
+          "correct_document_retrieved": true,
+          "correct_page_retrieved": true,
+          "doc_rank": 1,
+          "page_rank": 1,
+          "hit1_page": true,
+          "hit3_page": true,
+          "hit5_page": true,
+          "mrr_page": 1.0,
+          "retrieval_time_ms": 130.5
+        },
+        "hybrid_rrf_baseline": {
+          "top_result": {
+            "notice_id": "notice_1",
+            "page_number": 1,
+            "score": 0.0164
+          },
+          "correct_document_retrieved": true,
+          "correct_page_retrieved": true,
+          "doc_rank": 1,
+          "page_rank": 1,
+          "hit1_page": true,
+          "hit3_page": true,
+          "hit5_page": true,
+          "mrr_page": 1.0,
+          "retrieval_time_ms": 202.63
+        },
+        "hybrid_reranked": {
+          "top_result": {
+            "notice_id": "notice_1",
+            "page_number": 1,
+            "score": 1.0
+          },
+          "correct_document_retrieved": true,
+          "correct_page_retrieved": true,
+          "doc_rank": 1,
+          "page_rank": 1,
+          "hit1_page": true,
+          "hit3_page": true,
+          "hit5_page": true,
+          "mrr_page": 1.0,
+          "retrieval_time_ms": 159.65
+        }
+      }
+    },
+    {
+      "query_id": "Q21",
+      "question": "What is the official NIRF ranking of NIT Jamshedpur for 2027?",
+      "expected_document": null,
+      "expected_page": null,
+      "is_negative": true,
+      "modes": {
+        "text_baseline": {
+          "top_result": {
+            "notice_id": "notice_4",
+            "page_number": 1,
+            "score": 0.0325
+          },
+          "correct_document_retrieved": false,
+          "correct_page_retrieved": false,
+          "doc_rank": null,
+          "page_rank": null,
+          "hit1_page": false,
+          "hit3_page": false,
+          "hit5_page": false,
+          "mrr_page": 0.0,
+          "retrieval_time_ms": 7.19
+        },
+        "visual_colpali_vlm": {
+          "top_result": {
+            "notice_id": "notice_7",
+            "page_number": 1,
+            "score": 18.51
+          },
+          "correct_document_retrieved": false,
+          "correct_page_retrieved": false,
+          "doc_rank": null,
+          "page_rank": null,
+          "hit1_page": false,
+          "hit3_page": false,
+          "hit5_page": false,
+          "mrr_page": 0.0,
+          "retrieval_time_ms": 130.88
+        },
+        "hybrid_rrf_baseline": {
+          "top_result": {
+            "notice_id": "notice_4",
+            "page_number": 1,
+            "score": 0.016
+          },
+          "correct_document_retrieved": false,
+          "correct_page_retrieved": false,
+          "doc_rank": null,
+          "page_rank": null,
+          "hit1_page": false,
+          "hit3_page": false,
+          "hit5_page": false,
+          "mrr_page": 0.0,
+          "retrieval_time_ms": 133.2
+        },
+        "hybrid_reranked": {
+          "top_result": {
+            "notice_id": "notice_4",
+            "page_number": 1,
+            "score": 0.95
+          },
+          "correct_document_retrieved": false,
+          "correct_page_retrieved": false,
+          "doc_rank": null,
+          "page_rank": null,
+          "hit1_page": false,
+          "hit3_page": false,
+          "hit5_page": false,
+          "mrr_page": 0.0,
+          "retrieval_time_ms": 138.18
+        }
+      }
+    },
+    {
+      "query_id": "Q22",
+      "question": "Who is the Head of Aerospace Engineering at NIT Jamshedpur?",
+      "expected_document": null,
+      "expected_page": null,
+      "is_negative": true,
+      "modes": {
+        "text_baseline": {
+          "top_result": {
+            "notice_id": "notice_4",
+            "page_number": 1,
+            "score": 0.0308
+          },
+          "correct_document_retrieved": false,
+          "correct_page_retrieved": false,
+          "doc_rank": null,
+          "page_rank": null,
+          "hit1_page": false,
+          "hit3_page": false,
+          "hit5_page": false,
+          "mrr_page": 0.0,
+          "retrieval_time_ms": 7.89
+        },
+        "visual_colpali_vlm": {
+          "top_result": {
+            "notice_id": "notice_5",
+            "page_number": 16,
+            "score": 13.5592
+          },
+          "correct_document_retrieved": false,
+          "correct_page_retrieved": false,
+          "doc_rank": null,
+          "page_rank": null,
+          "hit1_page": false,
+          "hit3_page": false,
+          "hit5_page": false,
+          "mrr_page": 0.0,
+          "retrieval_time_ms": 125.14
+        },
+        "hybrid_rrf_baseline": {
+          "top_result": {
+            "notice_id": "notice_5",
+            "page_number": 16,
+            "score": 0.0162
+          },
+          "correct_document_retrieved": false,
+          "correct_page_retrieved": false,
+          "doc_rank": null,
+          "page_rank": null,
+          "hit1_page": false,
+          "hit3_page": false,
+          "hit5_page": false,
+          "mrr_page": 0.0,
+          "retrieval_time_ms": 130.42
+        },
+        "hybrid_reranked": {
+          "top_result": {
+            "notice_id": "notice_4",
+            "page_number": 1,
+            "score": 0.95
+          },
+          "correct_document_retrieved": false,
+          "correct_page_retrieved": false,
+          "doc_rank": null,
+          "page_rank": null,
+          "hit1_page": false,
+          "hit3_page": false,
+          "hit5_page": false,
+          "mrr_page": 0.0,
+          "retrieval_time_ms": 133.0
+        }
+      }
+    },
+    {
+      "query_id": "Q23",
+      "question": "who is the PG representative of student council??",
+      "expected_document": "notice_2.pdf",
+      "expected_page": 1,
+      "is_negative": false,
+      "modes": {
+        "text_baseline": {
+          "top_result": {
+            "notice_id": "notice_2",
+            "page_number": 1,
+            "score": 0.0325
+          },
+          "correct_document_retrieved": true,
+          "correct_page_retrieved": true,
+          "doc_rank": 1,
+          "page_rank": 1,
+          "hit1_page": true,
+          "hit3_page": true,
+          "hit5_page": true,
+          "mrr_page": 1.0,
+          "retrieval_time_ms": 7.16
+        },
+        "visual_colpali_vlm": {
+          "top_result": {
+            "notice_id": "notice_2",
+            "page_number": 1,
+            "score": 14.1595
+          },
+          "correct_document_retrieved": true,
+          "correct_page_retrieved": true,
+          "doc_rank": 1,
+          "page_rank": 1,
+          "hit1_page": true,
+          "hit3_page": true,
+          "hit5_page": true,
+          "mrr_page": 1.0,
+          "retrieval_time_ms": 122.55
+        },
+        "hybrid_rrf_baseline": {
+          "top_result": {
+            "notice_id": "notice_2",
+            "page_number": 1,
+            "score": 0.0164
+          },
+          "correct_document_retrieved": true,
+          "correct_page_retrieved": true,
+          "doc_rank": 1,
+          "page_rank": 1,
+          "hit1_page": true,
+          "hit3_page": true,
+          "hit5_page": true,
+          "mrr_page": 1.0,
+          "retrieval_time_ms": 128.15
+        },
+        "hybrid_reranked": {
+          "top_result": {
+            "notice_id": "notice_2",
+            "page_number": 1,
+            "score": 1.0
+          },
+          "correct_document_retrieved": true,
+          "correct_page_retrieved": true,
+          "doc_rank": 1,
+          "page_rank": 1,
+          "hit1_page": true,
+          "hit3_page": true,
+          "hit5_page": true,
+          "mrr_page": 1.0,
+          "retrieval_time_ms": 129.91
+        }
+      }
+    }
+  ]
+}

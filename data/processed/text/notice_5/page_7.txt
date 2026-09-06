@@ -1,0 +1,60 @@
+1
+NITJSR/26/MTP/EEE/PSE/0057
+M.Tech (FT) (GATE)
+Power System Engineering
+UTKARSH
+EWS
+Open
+Selected
+2
+NITJSR/26/MTP/EEE/PSE/0018
+M.Tech (FT) (Non-GATE)
+Power System Engineering
+Misha kumari
+OBC
+Open
+Selected
+3
+NITJSR/26/MTP/EEE/PSE/0015
+M.Tech (FT) (Non-GATE)
+Power System Engineering
+Puja Soren
+ST
+Open
+Waitlisted 01
+4
+NITJSR/26/MTP/EEE/PSE/0007
+M.Tech (FT) (Non-GATE)
+Power System Engineering
+MRITUNJAY KUMAR SINGH
+Gen
+Open
+Waitlisted 02
+5
+NITJSR/26/MTP/EEE/PSE/0003
+M.Tech (FT) (Non-GATE)
+Power System Engineering
+SUBHRATA 
+SUBHADARSHINI DAS
+OBC
+Open
+Waitlisted 03
+6
+NITJSR/26/MTP/EEE/PSE/0008
+M.Tech (FT) (Non-GATE)
+Power System Engineering
+Vishal Kumar Minz
+ST
+Open
+Waitlisted 04
+Remarks
+M.Tech 2026 (IAT)  Power System Engineering (Full Time)
+Sl#
+Application Number
+App Cat
+Programme Name
+Applicant Name
+Applied 
+Category
+Selected 
+Category
