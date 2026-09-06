@@ -11,12 +11,9 @@ import backend.config as cfg
 from backend.config import (
     GENERATION_MAX_TOKENS,
     GENERATION_TEMPERATURE,
-    GEMINI_MODEL,
     GROQ_BASE_URL,
     GROQ_MODEL,
     OPENAI_REQUEST_TIMEOUT_SECONDS,
-    XAI_BASE_URL,
-    XAI_MODEL,
 )
 
 
