@@ -9,6 +9,7 @@ import numpy as np
 
 from backend.config import (
     METADATA_DIR,
+    PROCESSED_DIR,
     TEXT_BM25_DOMINANCE_BONUS,
     TEXT_BM25_DOMINANCE_MIN_SCORE,
     TEXT_BM25_DOMINANCE_RATIO,
