@@ -101,7 +101,7 @@ class CompareRequest(BaseModel):
 
 
 class SetKeyRequest(BaseModel):
-    provider: Literal["xai", "groq", "gemini"]
+    provider: Optional[str] = "groq"
     api_key: str = Field(min_length=10, max_length=500)
 
 
@@ -122,7 +122,6 @@ def _retrieve(question: str, mode: str, top_k: int):
         text_weight=HYBRID_RRF_TEXT_WEIGHT,
         visual_weight=HYBRID_RRF_VISUAL_WEIGHT,
     )
-
 
 
 def _page_response(r: dict) -> dict:
@@ -153,12 +152,8 @@ def health():
         "text_index_loaded": text_index is not None and text_index.dense_embeddings is not None,
         "visual_index_loaded": visual_index is not None and visual_index.image_embeddings is not None,
         "total_pages": len(text_index.entries) if text_index else 0,
-        "llm_provider": cfg.LLM_PROVIDER,
-        "configured_model": {
-            "xai": cfg.XAI_MODEL,
-            "groq": cfg.GROQ_MODEL,
-            "gemini": cfg.GEMINI_MODEL,
-        }.get(cfg.LLM_PROVIDER),
+        "llm_provider": "groq",
+        "configured_model": cfg.GROQ_MODEL,
     }
 
 
@@ -167,17 +162,9 @@ def set_api_key(request: SetKeyRequest):
     import json
     import os
 
-    if request.provider == "xai":
-        cfg.XAI_API_KEY = request.api_key
-        os.environ["XAI_API_KEY"] = request.api_key
-    elif request.provider == "groq":
-        cfg.GROQ_API_KEY = request.api_key
-        os.environ["GROQ_API_KEY"] = request.api_key
-    else:
-        cfg.GEMINI_API_KEY = request.api_key
-        os.environ["GEMINI_API_KEY"] = request.api_key
-
-    cfg.LLM_PROVIDER = request.provider
+    cfg.GROQ_API_KEY = request.api_key
+    os.environ["GROQ_API_KEY"] = request.api_key
+    cfg.LLM_PROVIDER = "groq"
 
     try:
         keys_file = cfg.DATA_DIR / "keys.json"
@@ -187,25 +174,21 @@ def set_api_key(request: SetKeyRequest):
                 keys_data = json.loads(keys_file.read_text(encoding="utf-8"))
             except Exception:
                 keys_data = {}
-        keys_data[request.provider] = request.api_key
-        keys_data["provider"] = request.provider
+        keys_data["groq"] = request.api_key
+        keys_data["api_key"] = request.api_key
+        keys_data["provider"] = "groq"
         keys_file.write_text(json.dumps(keys_data, indent=2), encoding="utf-8")
     except Exception:
         pass
 
-    return {"status": "ok", "provider": request.provider, "message": f"{request.provider} API key set for this server session"}
+    return {"status": "ok", "provider": "groq", "message": "Groq API key set for this server session"}
 
 
 @app.get("/api/models")
 def list_models():
-    """Return the configured model; no external provider call is required."""
-    current = cfg.LLM_PROVIDER
-    model = {
-        "xai": cfg.XAI_MODEL,
-        "groq": cfg.GROQ_MODEL,
-        "gemini": cfg.GEMINI_MODEL,
-    }.get(current)
-    return {"provider": current, "models": [model] if model else []}
+    """Return the configured Groq model."""
+    return {"provider": "groq", "models": [cfg.GROQ_MODEL]}
+
 
 
 @app.get("/api/documents")

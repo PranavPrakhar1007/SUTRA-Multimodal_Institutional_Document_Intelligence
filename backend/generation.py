@@ -145,87 +145,11 @@ def _generate_openai_compatible(
         return _error_result(f"Error generating answer via {provider_name}.", notice_id, page_number, f"{provider_name}_error", str(exc))
 
 
-def _generate_gemini(
-    question: str,
-    notice_id: str,
-    page_number: int,
-    image_path: Optional[str] = None,
-    crop_box: Optional[Tuple[int, int, int, int]] = None,
-    text_context: Optional[str] = None,
-) -> dict:
-    if not cfg.GEMINI_API_KEY or not cfg.GEMINI_API_KEY.strip():
-        return _error_result("Gemini API key not configured.", notice_id, page_number, "error_no_api_key")
-
-    try:
-        from google import genai
-        from google.genai import types
-
-        client = genai.Client(api_key=cfg.GEMINI_API_KEY)
-        prompt = _build_prompt(question, notice_id, page_number, text_context)
-        parts = []
-
-        if image_path:
-            with Image.open(image_path) as src:
-                image = src.convert("RGB")
-                if crop_box:
-                    x0, y0, x1, y1 = [int(v) for v in crop_box]
-                    x0 = max(0, min(x0, image.width))
-                    x1 = max(x0 + 1, min(x1, image.width))
-                    y0 = max(0, min(y0, image.height))
-                    y1 = max(y0 + 1, min(y1, image.height))
-                    image = image.crop((x0, y0, x1, y1))
-                buffer = BytesIO()
-                image.save(buffer, format="PNG")
-                parts.append(types.Part.from_bytes(data=buffer.getvalue(), mime_type="image/png"))
-
-        parts.append(types.Part.from_text(text=prompt))
-        response = client.models.generate_content(
-            model=GEMINI_MODEL,
-            contents=[types.Content(role="user", parts=parts)],
-        )
-        answer = (getattr(response, "text", "") or "").strip() or ABSTENTION_TEXT
-
-        source = {"notice_id": notice_id, "page_number": page_number}
-        if image_path:
-            source["evidence_type"] = "visual_crop" if crop_box else "page_image"
-        if crop_box:
-            source["evidence_box"] = [int(v) for v in crop_box]
-
-        return {
-            "answer": answer,
-            "source": source,
-            "generation_method": "gemini_hybrid" if image_path and text_context else ("gemini_visual" if image_path else "gemini_text"),
-            "model": GEMINI_MODEL,
-            "status": "success",
-        }
-    except Exception as exc:
-        return _error_result("Error generating answer via Gemini.", notice_id, page_number, "gemini_error", str(exc))
-
-
 def _provider_result(question, notice_id, page_number, image_path=None, crop_box=None, text_context=None):
-    """Route to the configured provider. Visual requests never fall back to text-only models."""
-    provider = cfg.LLM_PROVIDER
-
-    if provider == "xai":
-        return _generate_openai_compatible(
-            question, notice_id, page_number, cfg.XAI_API_KEY, XAI_BASE_URL, XAI_MODEL, "xai",
-            image_path=image_path, crop_box=crop_box, text_context=text_context,
-        )
-    if provider == "groq":
-        return _generate_openai_compatible(
-            question, notice_id, page_number, cfg.GROQ_API_KEY, GROQ_BASE_URL, GROQ_MODEL, "groq",
-            image_path=image_path, crop_box=crop_box, text_context=text_context,
-        )
-    if provider == "gemini":
-        return _generate_gemini(
-            question, notice_id, page_number, image_path=image_path, crop_box=crop_box, text_context=text_context
-        )
-
-    return _error_result(
-        "No multimodal/text provider is configured. Set an xAI, Groq, or Gemini API key.",
-        notice_id,
-        page_number,
-        "error_no_provider",
+    """Route to Groq provider."""
+    return _generate_openai_compatible(
+        question, notice_id, page_number, cfg.GROQ_API_KEY, GROQ_BASE_URL, GROQ_MODEL, "groq",
+        image_path=image_path, crop_box=crop_box, text_context=text_context,
     )
 
 
