@@ -3,21 +3,21 @@
     "notice_id": "notice_1",
     "page_number": 1,
     "has_text": true,
-    "text_length": 1633,
+    "text_length": 1632,
     "relative_image_path": "data/processed/pages/notice_1/page_1.png"
   },
   {
     "notice_id": "notice_2",
     "page_number": 1,
     "has_text": true,
-    "text_length": 1582,
+    "text_length": 1589,
     "relative_image_path": "data/processed/pages/notice_2/page_1.png"
   },
   {
     "notice_id": "notice_3",
     "page_number": 1,
     "has_text": true,
-    "text_length": 3032,
+    "text_length": 3029,
     "relative_image_path": "data/processed/pages/notice_3/page_1.png"
   },
   {
@@ -31,7 +31,7 @@
     "notice_id": "notice_5",
     "page_number": 1,
     "has_text": true,
-    "text_length": 1679,
+    "text_length": 1675,
     "relative_image_path": "data/processed/pages/notice_5/page_1.png"
   },
   {
@@ -66,7 +66,7 @@
     "notice_id": "notice_5",
     "page_number": 6,
     "has_text": true,
-    "text_length": 2012,
+    "text_length": 2000,
     "relative_image_path": "data/processed/pages/notice_5/page_6.png"
   },
   {
@@ -115,49 +115,49 @@
     "notice_id": "notice_5",
     "page_number": 13,
     "has_text": true,
-    "text_length": 1654,
+    "text_length": 1653,
     "relative_image_path": "data/processed/pages/notice_5/page_13.png"
   },
   {
     "notice_id": "notice_5",
     "page_number": 14,
     "has_text": true,
-    "text_length": 1687,
+    "text_length": 1683,
     "relative_image_path": "data/processed/pages/notice_5/page_14.png"
   },
   {
     "notice_id": "notice_5",
     "page_number": 15,
     "has_text": true,
-    "text_length": 2449,
+    "text_length": 2439,
     "relative_image_path": "data/processed/pages/notice_5/page_15.png"
   },
   {
     "notice_id": "notice_5",
     "page_number": 16,
     "has_text": true,
-    "text_length": 1820,
+    "text_length": 1814,
     "relative_image_path": "data/processed/pages/notice_5/page_16.png"
   },
   {
     "notice_id": "notice_6",
     "page_number": 1,
     "has_text": true,
-    "text_length": 2462,
+    "text_length": 2456,
     "relative_image_path": "data/processed/pages/notice_6/page_1.png"
   },
   {
     "notice_id": "notice_7",
     "page_number": 1,
     "has_text": true,
-    "text_length": 1817,
+    "text_length": 1816,
     "relative_image_path": "data/processed/pages/notice_7/page_1.png"
   },
   {
     "notice_id": "notice_7",
     "page_number": 2,
     "has_text": true,
-    "text_length": 1650,
+    "text_length": 1649,
     "relative_image_path": "data/processed/pages/notice_7/page_2.png"
   },
   {
