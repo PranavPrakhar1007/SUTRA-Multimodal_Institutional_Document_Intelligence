@@ -60,7 +60,6 @@ Capstone_College_RAG/
 ├── .gitignore                # Git exclusions (node_modules, API keys, caches)
 ├── CORPUS_MANIFEST.csv       # Corpus manifest of the 7 NIT Jamshedpur documents
 ├── DECISIONS.md              # Technical decision record & architecture rationale
-├── DEVELOPMENT_HISTORY.md    # Detailed development trajectory & project history
 ├── HARDWARE.md               # Hardware specs & CUDA vRAM optimization details
 ├── README.md                 # Project documentation & Quickstart guide
 └── requirements.txt          # Master Python dependency manifest
