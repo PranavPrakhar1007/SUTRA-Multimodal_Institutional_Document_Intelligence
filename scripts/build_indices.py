@@ -47,7 +47,7 @@ def main():
         ("Text Baseline", text_loaded.search(query, top_k=3)),
         ("Visual VLM", visual_loaded.search(query, top_k=3)),
         ("Hybrid RRF Baseline", hybrid_baseline.search(query, top_k=3)),
-        ("Visual Reranked", visual_reranker.score_candidates(query, candidate_ids=None, top_k=3)),
+        ("Visual Reranked", visual_reranker.score_candidates(query, candidates=visual_loaded.search(query, top_k=5), top_k=3)),
         ("Hybrid Reranked", hybrid_reranked.search(query, top_k=3)),
     ):
         print(f"\nMode: {label}")

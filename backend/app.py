@@ -115,7 +115,7 @@ def _retrieve(question: str, mode: str, top_k: int):
     if mode in ("text", "text_baseline"):
         return text_index.search(question, top_k=top_k)
     if mode in ("visual_reranked",):
-        return visual_reranker.score_candidates(question, candidate_ids=None, top_k=top_k)
+        return visual_reranker.score_candidates(question, candidates=visual_index.search(question, top_k=top_k * 2), top_k=top_k)
     if mode in ("visual", "vision", "visual_colqwen2", "visual_clip_baseline"):
         return visual_index.search(question, top_k=top_k)
     if mode in ("hybrid_reranked",):

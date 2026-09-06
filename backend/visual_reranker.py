@@ -5,7 +5,7 @@ late-interaction patch matching for precise visual document search.
 """
 
 from pathlib import Path
-from typing import Any, Dict, List, Tuple
+from typing import Any, Dict, List, Optional, Tuple
 
 import numpy as np
 from PIL import Image
@@ -49,10 +49,15 @@ class VisualReranker:
     def score_candidates(
         self,
         query: str,
-        candidates: List[Dict[str, Any]],
+        candidates: Optional[List[Dict[str, Any]]] = None,
         top_k: int = 5,
+        candidate_ids: Optional[Any] = None,
+        visual_index: Optional[Any] = None,
     ) -> List[Dict[str, Any]]:
-        if not candidates:
+        cands = candidates if candidates is not None else (candidate_ids if isinstance(candidate_ids, list) else None)
+        if cands is None and visual_index is not None:
+            cands = visual_index.search(query, top_k=max(top_k * 2, 10))
+        if not cands:
             return []
 
         import torch
@@ -64,7 +69,7 @@ class VisualReranker:
 
         reranked: List[Dict[str, Any]] = []
 
-        for candidate in candidates:
+        for candidate in cands:
             notice_id = candidate.get("notice_id", "")
             page_number = int(candidate.get("page_number", candidate.get("page", 1)))
             resolved = resolve_page_image(notice_id, page_number, candidate.get("image_path", ""))
