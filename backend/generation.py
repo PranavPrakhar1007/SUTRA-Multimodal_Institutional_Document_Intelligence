@@ -95,10 +95,35 @@ def _generate_openai_compatible(
     if not api_key or not api_key.strip():
         return _error_result(f"{provider_name} API key not configured.", notice_id, page_number, "error_no_api_key")
 
-    try:
-        from openai import OpenAI
+_openai_clients = {}
 
-        client = OpenAI(api_key=api_key, base_url=base_url, timeout=OPENAI_REQUEST_TIMEOUT_SECONDS)
+
+def _get_openai_client(api_key: str, base_url: str, timeout: float):
+    cache_key = (api_key, base_url)
+    if cache_key not in _openai_clients:
+        from openai import OpenAI
+        _openai_clients[cache_key] = OpenAI(api_key=api_key, base_url=base_url, timeout=timeout)
+    return _openai_clients[cache_key]
+
+
+def _generate_openai_compatible(
+    question: str,
+    notice_id: str,
+    page_number: int,
+    api_key: str,
+    base_url: str,
+    model: str,
+    provider_name: str,
+    image_path: Optional[str] = None,
+    crop_box: Optional[Tuple[int, int, int, int]] = None,
+    text_context: Optional[str] = None,
+) -> dict:
+    """Call an OpenAI-compatible provider with text-only or multimodal evidence."""
+    if not api_key or not api_key.strip():
+        return _error_result(f"{provider_name} API key not configured.", notice_id, page_number, "error_no_api_key")
+
+    try:
+        client = _get_openai_client(api_key, base_url, OPENAI_REQUEST_TIMEOUT_SECONDS)
         prompt = _build_prompt(question, notice_id, page_number, text_context)
 
         if image_path:
@@ -122,8 +147,10 @@ def _generate_openai_compatible(
             temperature=GENERATION_TEMPERATURE,
         )
         answer = (response.choices[0].message.content or "").strip()
-        if not answer:
+        status = "success"
+        if not answer or answer == ABSTENTION_TEXT:
             answer = ABSTENTION_TEXT
+            status = "abstained"
 
         source = {"notice_id": notice_id, "page_number": page_number}
         if image_path:
@@ -136,7 +163,7 @@ def _generate_openai_compatible(
             "source": source,
             "generation_method": method,
             "model": model,
-            "status": "success",
+            "status": status,
         }
     except Exception as exc:
         return _error_result(f"Error generating answer via {provider_name}.", notice_id, page_number, f"{provider_name}_error", str(exc))
@@ -151,7 +178,6 @@ def _provider_result(question, notice_id, page_number, image_path=None, crop_box
 
 
 def _resolve_image(retrieved_result: dict):
-    from backend.config import PAGES_DIR
     from backend.path_utils import resolve_page_image
 
     notice_id = retrieved_result.get("notice_id", "unknown")
@@ -200,10 +226,14 @@ def generate_answer(question: str, retrieved_result: dict, mode: str = "visual",
             text_context=text_context or None,
         )
 
-    # Visual modes: never call a text-only model and never silently inject OCR text.
-    if not image_path:
-        return {"answer": "Page image not found for visual generation.", "source": {"notice_id": notice_id, "page_number": page_number}, "generation_method": "error_no_image", "status": "error"}
+    if mode in ("visual", "vision", "visual_colqwen2", "visual_clip_baseline", "visual_reranked"):
+        if not image_path:
+            return {"answer": "Page image not found for visual generation.", "source": {"notice_id": notice_id, "page_number": page_number}, "generation_method": "error_no_image", "status": "error"}
+        crop = retrieved_result.get("best_tile_box") if mode in ("visual_reranked",) else None
+        crop_box = tuple(crop) if crop and len(crop) == 4 else None
+        return _provider_result(question, notice_id, page_number, image_path=str(image_path), crop_box=crop_box)
 
-    crop = retrieved_result.get("best_tile_box") if mode in ("visual", "visual_reranked") else None
-    crop_box = tuple(crop) if crop and len(crop) == 4 else None
-    return _provider_result(question, notice_id, page_number, image_path=str(image_path), crop_box=crop_box)
+    # Unknown mode fallback to text-only if text exists, else error
+    if text_context:
+        return _provider_result(question, notice_id, page_number, text_context=text_context)
+    return {"answer": ABSTENTION_TEXT, "source": {"notice_id": notice_id, "page_number": page_number}, "generation_method": "error_unknown_mode", "status": "error"}

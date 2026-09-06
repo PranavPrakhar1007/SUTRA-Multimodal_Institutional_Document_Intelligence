@@ -76,6 +76,7 @@ class VisualIndex:
 
     def build_from_processed(self, processed_dir: Path):
         """Build portable ColPali multi-vector visual index from page images."""
+        self._cuda_img_tensors = None
         metadata_files = sorted(
             METADATA_DIR.glob("notice_*.json"),
             key=lambda p: int(p.stem.split("_")[1]),
@@ -157,7 +158,6 @@ class VisualIndex:
             results.append(entry)
         return results
 
-
     def save(self, path: Path):
         path.mkdir(parents=True, exist_ok=True)
         # Save multi-vector embeddings as npz archive
@@ -180,47 +180,62 @@ class VisualIndex:
         print(f"Visual index ({VISUAL_EMBEDDING_MODEL}) saved to {path}")
 
     def load(self, path: Path):
+        self._cuda_img_tensors = None
         meta_file = path / "index_meta.json"
         if meta_file.exists():
             try:
                 with open(meta_file, "r", encoding="utf-8") as f:
                     meta = json.load(f)
                     saved_model = meta.get("model")
-                    if saved_model and saved_model != VISUAL_EMBEDDING_MODEL:
+                    if saved_model != VISUAL_EMBEDDING_MODEL:
                         print(f"WARNING: Visual index model mismatch (saved: '{saved_model}', configured: '{VISUAL_EMBEDDING_MODEL}'). Rebuilding index...")
                         self.build_from_processed(PROCESSED_DIR)
                         self.save(path)
                         return
             except Exception as e:
-                print(f"Error reading index_meta.json: {e}")
-
-        npz_file = path / "colpali_embeddings.npz"
-        npy_file = path / "visual_embeddings.npy"
-
-        if npz_file.exists():
-            archive = np.load(npz_file)
-            self.image_embeddings = [archive[f"emb_{i}"] for i in range(len(archive.files))]
-        elif npy_file.exists():
-            # Fallback for old single-vector embeddings
-            old_emb = np.load(npy_file)
-            self.image_embeddings = [old_emb[i : i + 1] for i in range(len(old_emb))]
-
-        with open(path / "visual_entries.json", "r", encoding="utf-8") as f:
-            raw_entries = json.load(f)
-
-        self.entries = []
-        for e in raw_entries:
-            nid = e.get("notice_id", "")
-            pnum = int(e.get("page_number", 1))
-            img_path = resolve_page_image(nid, pnum, e.get("relative_image_path", ""))
-            entry = e.copy()
-            if img_path:
-                entry["relative_image_path"] = relative_to_project(img_path)
-            self.entries.append(entry)
-
-        if len(self.entries) != len(self.image_embeddings) or len(self.entries) == 0:
-            print(f"WARNING: Visual index corrupted or empty (entries: {len(self.entries)}, embeddings: {len(self.image_embeddings)}). Rebuilding index...")
+                print(f"Error reading index_meta.json: {e}. Invalidating index & rebuilding...")
+                self.build_from_processed(PROCESSED_DIR)
+                self.save(path)
+                return
+        else:
+            print("WARNING: index_meta.json missing. Rebuilding visual index...")
             self.build_from_processed(PROCESSED_DIR)
             self.save(path)
+            return
+
+        npz_file = path / "colpali_embeddings.npz"
+        entries_file = path / "visual_entries.json"
+
+        if not npz_file.exists() or not entries_file.exists():
+            print("WARNING: Missing visual embeddings NPZ or visual_entries.json. Rebuilding index...")
+            self.build_from_processed(PROCESSED_DIR)
+            self.save(path)
+            return
+
+        try:
+            with open(entries_file, "r", encoding="utf-8") as f:
+                raw_entries = json.load(f)
+
+            with np.load(npz_file) as archive:
+                self.image_embeddings = [archive[f"emb_{i}"] for i in range(len(raw_entries))]
+
+            self.entries = []
+            for e in raw_entries:
+                nid = e.get("notice_id", "")
+                pnum = int(e.get("page_number", 1))
+                img_path = resolve_page_image(nid, pnum, e.get("relative_image_path", ""))
+                entry = e.copy()
+                if img_path:
+                    entry["relative_image_path"] = relative_to_project(img_path)
+                self.entries.append(entry)
+
+            if len(self.entries) != len(self.image_embeddings) or len(self.entries) == 0:
+                raise ValueError(f"Entry/embedding count mismatch: {len(self.entries)} vs {len(self.image_embeddings)}")
+
+        except Exception as exc:
+            print(f"WARNING: Error loading visual index archive ({exc}). Rebuilding index...")
+            self.build_from_processed(PROCESSED_DIR)
+            self.save(path)
+            return
 
         print(f"Visual index ({VISUAL_EMBEDDING_MODEL}) loaded from {path}: {len(self.entries)} pages")

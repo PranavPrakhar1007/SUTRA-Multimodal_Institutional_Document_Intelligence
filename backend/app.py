@@ -71,7 +71,7 @@ def startup():
 
     visual_index = VisualIndex()
     visual_path = EMBEDDINGS_DIR / "visual"
-    if (visual_path / "visual_embeddings.npy").exists():
+    if (visual_path / "colpali_embeddings.npz").exists() and (visual_path / "index_meta.json").exists():
         visual_index.load(visual_path)
     else:
         visual_index.build_from_processed(PROCESSED_DIR)

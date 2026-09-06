@@ -114,8 +114,8 @@ def main():
             elif mode == "visual_vlm":
                 retrieved = visual.search(question, top_k=page_count)
             elif mode == "visual_reranked":
-                stage1 = visual.search(question, top_k=HYBRID_CANDIDATE_UNION_SIZE)
-                retrieved = visual_reranker.score_candidates(question, stage1, top_k=page_count)
+                stage1 = visual.search(question, top_k=page_count)
+                retrieved = visual_reranker.score_candidates(question, candidates=stage1, top_k=page_count)
             elif mode == "hybrid_rrf_baseline":
                 retrieved = hybrid_rrf.search(
                     question,
@@ -127,7 +127,7 @@ def main():
                 retrieved = hybrid_reranked.search(
                     question,
                     top_k=page_count,
-                    candidate_union_size=HYBRID_CANDIDATE_UNION_SIZE,
+                    candidate_union_size=page_count,
                 )
             latency_ms = round((time.perf_counter() - start) * 1000, 2)
 
@@ -165,7 +165,10 @@ def main():
         hit3 = sum(1 for r in positive if r["modes"][mode]["hit3_page"])
         hit5 = sum(1 for r in positive if r["modes"][mode]["hit5_page"])
         mrr = sum(r["modes"][mode]["mrr_page"] for r in positive) / n if n else 0.0
-        latencies = [r["modes"][mode]["retrieval_time_ms"] for r in all_results]
+
+        pos_latencies = [r["modes"][mode]["retrieval_time_ms"] for r in positive]
+        neg_latencies = [r["modes"][mode]["retrieval_time_ms"] for r in negative]
+        all_latencies = [r["modes"][mode]["retrieval_time_ms"] for r in all_results]
         negative_zero = sum(1 for r in negative if r["modes"][mode]["rejection_signal"])
 
         summary[mode] = {
@@ -176,13 +179,22 @@ def main():
             "page_hit_at_3": round(hit3 / n, 4) if n else 0.0,
             "page_hit_at_5": round(hit5 / n, 4) if n else 0.0,
             "page_mrr": round(mrr, 4),
-            "avg_retrieval_latency_ms": round(sum(latencies) / len(latencies), 2) if latencies else 0.0,
+            "avg_positive_latency_ms": round(sum(pos_latencies) / len(pos_latencies), 2) if pos_latencies else 0.0,
+            "avg_negative_latency_ms": round(sum(neg_latencies) / len(neg_latencies), 2) if neg_latencies else 0.0,
+            "avg_overall_latency_ms": round(sum(all_latencies) / len(all_latencies), 2) if all_latencies else 0.0,
             "negative_zero_score_rate": round(negative_zero / len(negative), 4) if negative else 0.0,
         }
 
+    from backend.config import VISUAL_EMBEDDING_MODEL, TEXT_EMBEDDING_MODEL
     output = {
-        "benchmark_version": "2026-09-06-retrieval-v2",
-        "evaluation_scope": "retrieval_only",
+        "benchmark_version": "2026-09-06-colqwen2-multi-vector-v2",
+        "evaluation_scope": "full_ranking_retrieval",
+        "metadata_fingerprint": {
+            "text_embedding_model": TEXT_EMBEDDING_MODEL,
+            "visual_embedding_model": VISUAL_EMBEDDING_MODEL,
+            "timestamp": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
+            "corpus_pages": page_count,
+        },
         "total_queries": len(all_results),
         "positive_queries": len(positive),
         "negative_queries": len(negative),

@@ -1,305 +1,27 @@
-Bro, I did the **full red-team audit on the latest ZIP**, excluding the documentation files as you asked.
+Bro, **I did another full red-team pass on `Capstone_College_RAG (5).zip`**, this time treating the repository itself as hostile: I checked first-party source files, scripts, runtime wiring, persisted indexes/results, frontend/backend contracts, Git state, dependencies, generated artifacts, and actually executed the portions that could be executed safely.
 
-I did not just read the code. I also ran:
+I **did not audit the documentation files** (`README`, `DECISIONS`, `EXPERIMENT_NOTES`, `HARDWARE`, `questions.txt`, etc.), as you asked.
 
-* Python `compileall` across backend/scripts
-* direct import tests for every backend module
-* runtime test of the Hybrid Reranker
-* corpus/metadata consistency checks
-* visual/text index consistency checks
-* evaluation/result consistency checks
-* actual `process_documents.py`
-* actual `profile_corpus.py`
-* frontend build attempt
-* frontend dependency inspection
-* Git tracking/ignore inspection
-* dependency/import audit
-* static search for stale/dead configuration and implementation mismatches
+I also did **not** count previously fixed issues as current bugs.
 
-And bro, **there are still quite a few real bugs**. Some are critical enough that I would absolutely fix them before calling this repository final.
+One important correction from the previous audit: several major issues we identified earlier **are now fixed**. For example, the backend imports cleanly now, `hybrid_reranked` routing exists, `visual_reranked` routing exists, the `vision` alias is accepted, and the previous `_rank_score(decay=...)` crash is gone.
+
+But there are still a lot of things.
 
 ---
 
-# EXECUTIVE RESULT
+# 🔴 A. CRITICAL — DATA / INDEX / MODEL CONSISTENCY
 
-I would currently classify the project like this:
+## 1. [✓] The repository's saved Visual index is still ColPali, while code is configured for ColQwen2
 
-| Area                      | Status                                   |
-| ------------------------- | ---------------------------------------- |
-| Text retrieval            | 🟢 Good                                  |
-| PDF processing            | 🟢 Mostly good                           |
-| OCR                       | 🟢 Mostly good                           |
-| Visual index              | 🔴 Model/index inconsistency             |
-| Visual reranking          | 🔴 Several architectural bugs            |
-| Hybrid baseline           | 🟢 Mostly functional                     |
-| Hybrid reranked           | 🔴 **Runtime broken**                    |
-| API generation            | 🔴 **Import broken**                     |
-| `/api/query` mode routing | 🔴 **Wrong modes routed**                |
-| Evaluation                | 🔴 **Not aligned with actual app**       |
-| Frontend                  | 🔴 Several functional/stale-state issues |
-| Dependency setup          | 🔴 Missing required packages             |
-| Security                  | 🔴 API key exposed in artifact           |
-| Reproducibility           | 🟠 Needs work                            |
-| Packaging                 | 🟠 Needs cleanup                         |
-
----
-
-# 🔴 CRITICAL BUGS
-
-These are the ones I would fix first.
-
----
-
-## 1. [✓] `backend/generation.py` cannot import
-
-### File
+**Files:**
 
 ```text
-backend/generation.py
+backend/config.py
+data/embeddings/visual/index_meta.json
 ```
 
-### Code
-
-```python
-from backend.config import (
-    ...
-    GEMINI_MODEL,
-    ...
-    XAI_BASE_URL,
-    XAI_MODEL,
-)
-```
-
-But `backend/config.py` does not define any of them.
-
-I actually tested it:
-
-```text
-FAIL backend.generation
-ImportError: cannot import name 'GEMINI_MODEL'
-```
-
-and because `app.py` imports `generation.py`:
-
-```text
-FAIL backend.app
-ImportError: cannot import name 'GEMINI_MODEL'
-```
-
-### Consequence
-
-The backend cannot start cleanly from this codebase.
-
-### Fix
-
-Remove those stale imports and make generation genuinely Groq-only, since current config only supports Groq.
-
-**Severity: 🔴 BLOCKER**
-
----
-
-# 2. [✓] `/api/query` DOES NOT ACTUALLY USE Hybrid Reranked
-
-This is probably the most important architectural bug.
-
-In:
-
-```text
-backend/app.py
-```
-
-you have:
-
-```python
-if mode in ("text", "text_baseline"):
-    return text_index.search(...)
-
-if mode in ("visual", "visual_colqwen2",
-            "visual_clip_baseline", "visual_reranked"):
-    return visual_index.search(...)
-
-return hybrid_retriever.search(...)
-```
-
-Notice what is missing:
-
-```text
-hybrid_reranked_retriever.search(...)
-```
-
-So:
-
-```text
-mode = hybrid_reranked
-```
-
-falls through to:
-
-```text
-HybridRetriever
-```
-
-which is the **naive RRF baseline**.
-
-### Therefore:
-
-```text
-User/API requests:
-Hybrid Reranked
-        ↓
-Actual system:
-Hybrid RRF Baseline
-```
-
-Your improved Hybrid class is instantiated:
-
-```python
-hybrid_reranked_retriever = HybridRerankedRetriever(...)
-```
-
-but never actually used by `/api/query`.
-
-### Severity
-
-**🔴 BLOCKER**
-
----
-
-# 3. [✓] `visual_reranked` also does NOT actually use the visual reranker
-
-Same function:
-
-```python
-if mode in (... "visual_reranked"):
-    return visual_index.search(...)
-```
-
-So:
-
-```text
-visual_reranked
-```
-
-actually returns:
-
-```text
-plain ColQwen2/ColPali retrieval
-```
-
-and never calls:
-
-```python
-visual_reranker.score_candidates(...)
-```
-
-### Meaning
-
-Your supposedly improved visual pipeline is not reachable through normal `/api/query`.
-
-**🔴 BLOCKER**
-
----
-
-# 4. [✓] Frontend sends `"vision"` but backend expects `"visual"`
-
-This is a direct frontend/backend contract bug.
-
-Frontend:
-
-```javascript
-setMode('vision')
-```
-
-and later:
-
-```javascript
-body: JSON.stringify({
-    question: q,
-    mode: selectedMode,
-    top_k: 5
-})
-```
-
-Backend `QueryRequest` accepts:
-
-```text
-text
-text_baseline
-visual
-visual_clip_baseline
-visual_reranked
-hybrid
-hybrid_rrf_baseline
-hybrid_reranked
-```
-
-There is **no `"vision"`**.
-
-Therefore when the user clicks:
-
-> Visual VLM (ColQwen2)
-
-the API request becomes:
-
-```json
-{
-  "mode": "vision"
-}
-```
-
-and FastAPI/Pydantic returns **422 validation error**.
-
-### Worse
-
-`handleQuery()` doesn't check `res.ok`.
-
-So the UI may just receive the FastAPI error JSON and render a blank/incorrect result.
-
-**🔴 BLOCKER**
-
----
-
-# 5. [✓] Hybrid Reranker crashes at runtime
-
-This is a genuine code bug.
-
-### `backend/hybrid_reranker.py`
-
-Function:
-
-```python
-def _rank_score(rank: int | None, floor: float = 0.0) -> float:
-```
-
-But calls are:
-
-```python
-self._rank_score(rank, floor=0.1, decay=0.1)
-```
-
-There is no `decay` parameter.
-
-I executed it with dummy retrievers.
-
-Result:
-
-```text
-TypeError:
-HybridRerankedRetriever._rank_score()
-got an unexpected keyword argument 'decay'
-```
-
-So the improved Hybrid isn't merely imperfect—it is **currently non-functional**.
-
-**🔴 BLOCKER**
-
----
-
-# 6. [✓] Saved visual index is ColPali while code/config says ColQwen2
-
-This is the biggest reproducibility problem.
-
-Current config:
+Code:
 
 ```python
 VISUAL_EMBEDDING_MODEL = "vidore/colqwen2-v1.0"
@@ -308,362 +30,677 @@ VISUAL_EMBEDDING_MODEL = "vidore/colqwen2-v1.0"
 Saved index:
 
 ```json
-{
-  "model": "vidore/colpali-v1.2"
-}
+"model": "vidore/colpali-v1.2"
 ```
 
-I directly checked both.
-
-Result:
+So the repository currently contains:
 
 ```text
-configured visual model:
-vidore/colqwen2-v1.0
-
-indexed visual model:
-vidore/colpali-v1.2
-```
-
-So current:
-
-```text
-query encoder
-    ↓
+configured query model
+        ↓
 ColQwen2
 
-document embeddings
-    ↓
+saved document embeddings
+        ↓
 ColPali
 ```
 
-That is not a valid benchmark comparison.
+These are different model checkpoints.
 
-You cannot mix embeddings from one checkpoint/model with query embeddings from another model simply because they both belong to the Col-family.
+This is the single biggest remaining scientific/reproducibility problem.
 
 ### Fix
 
-Delete/rebuild:
+Delete all old visual embeddings and rebuild:
 
 ```text
 data/embeddings/visual/
 ```
 
-with exactly the model configured in `config.py`.
+using exactly the configured model.
 
-Then validate the model ID on startup.
+Then verify:
 
-**🔴 BLOCKER**
-
-This is also why I would **not trust the current saved “100% Visual” result as a final ColQwen2 result**.
+```text
+index_meta.model == VISUAL_EMBEDDING_MODEL
+```
 
 ---
 
-# 7. [✓] Evaluation results themselves are stale relative to evaluation code
+## 2. [✓] The saved benchmark is therefore not a clean ColQwen2 benchmark
 
-Current saved:
+`data/evaluation/results.json` still reports:
 
 ```text
-data/evaluation/results.json
+benchmark_version = 2026-09-06-colpali-gpu-vlm
 ```
 
-uses modes:
+and contains:
 
 ```text
-text_baseline
 visual_colpali_vlm
-hybrid_rrf_baseline
-hybrid_reranked
 ```
 
-Current `run_evaluation.py` defines:
+while current code intends:
 
 ```text
-text_baseline
-visual_clip_baseline
+ColQwen2
+visual_vlm
 visual_reranked
-hybrid_rrf_baseline
-hybrid_reranked
 ```
 
-So the file in the repository was generated by a **different evaluation implementation/version**.
-
-That means this:
-
-```text
-results.json
-```
-
-is not reproducibly generated by the current `run_evaluation.py`.
-
-**🔴 BLOCKER for benchmark credibility**
-
----
-
-# 8. [✓] Evaluation Visual Reranked is NOT the same pipeline as the application
-
-In evaluation:
-
-```python
-stage1 = visual.search(question, top_k=page_count)
-retrieved = visual_reranker.score_candidates(...)
-```
-
-So evaluation gives Visual Reranked:
-
-```text
-ALL 25 PAGES
-```
-
-to the reranker.
-
-But the intended application architecture uses candidate limits.
-
-Similarly:
-
-```python
-hybrid_reranked.search(
-    question,
-    top_k=page_count,
-    candidate_union_size=page_count
-)
-```
-
-uses **all 25 pages**.
-
-So benchmark:
-
-```text
-all corpus → rerank
-```
-
-while application:
-
-```text
-top candidate set → rerank
-```
-
-Those are different systems.
+Therefore the current benchmark artifact belongs to an older implementation/configuration.
 
 ### Consequence
 
-Your benchmark can show excellent performance that the actual application will not reproduce.
+Do NOT present the current saved Visual numbers as:
 
-**🔴 MAJOR**
+> “Our ColQwen2 benchmark.”
+
+They are stale.
 
 ---
 
-# 9. [✓] Legacy `visual_embeddings.npy` is dangerous
+## 3. [✓] `app.py` still has a dangerous legacy-index selection condition
 
-You currently have both:
-
-```text
-data/embeddings/visual/colpali_embeddings.npz
-data/embeddings/visual/visual_embeddings.npy
-```
-
-The legacy NPY is:
-
-```text
-25 × 512
-```
-
-while current ColQwen2/ColPali multi-vector embeddings are:
-
-```text
-~N × 128
-```
-
-`VisualIndex.load()` does:
+Startup:
 
 ```python
-if npz_file.exists():
-    ...
-elif npy_file.exists():
-    old_emb = np.load(...)
+if (visual_path / "visual_embeddings.npy").exists():
+    visual_index.load(visual_path)
+else:
+    visual_index.build_from_processed(...)
 ```
 
-That fallback wraps old 512-dimensional embeddings as:
+Your current repository still contains:
 
 ```text
-(1, 512)
+visual_embeddings.npy
 ```
 
-and then later feeds them to multi-vector scoring with the new model.
+even though the actual current index format is:
 
-If the correct NPZ disappears, the application can silently load the **old incompatible embedding representation**.
+```text
+colpali_embeddings.npz
+```
+
+So the startup decision is based on the **obsolete file**.
+
+The `load()` function eventually prefers NPZ, so the current path may still work after model-mismatch handling, but this is unnecessarily fragile.
+
+### Correct logic
+
+Check:
+
+```text
+index_meta.json
+colpali_embeddings.npz
+visual_entries.json
+```
+
+as the current index.
+
+---
+
+## 4. [✓] The old `visual_embeddings.npy` should not still exist
+
+You have:
+
+```text
+colpali_embeddings.npz
+visual_embeddings.npy
+```
+
+The NPY is the old 512-dimensional single-vector format.
+
+The current ColQwen2/ColPali architecture uses multi-vector embeddings.
+
+Keeping both creates a dangerous fallback path.
 
 ### Fix
 
-Remove legacy NPY support or explicitly validate its model/dimension.
-
-**🔴 MAJOR**
+Delete the old NPY entirely.
 
 ---
 
-# 10. [✓] `VisualIndex.load()` doesn't validate model compatibility
+## 5. [✓] Legacy NPY fallback can resurrect incompatible visual embeddings
 
-It loads:
+Current fallback:
+
+```python
+old_emb = np.load(npy_file)
+self.image_embeddings = [
+    old_emb[i : i + 1]
+    for i in range(len(old_emb))
+]
+```
+
+That converts a 512-dimensional old single-vector embedding into:
+
+```text
+1 × 512
+```
+
+and pretends it is a multi-vector embedding.
+
+That is conceptually incompatible with the current visual scoring design.
+
+### Fix
+
+Remove the fallback.
+
+If current NPZ is missing:
+
+```text
+FAIL LOUDLY
+```
+
+or rebuild.
+
+Never silently downgrade to an obsolete embedding format.
+
+---
+
+## 6. [✓] `VisualIndex.load()` does not fail hard on malformed metadata
+
+If:
 
 ```text
 index_meta.json
 ```
 
-but never checks:
+is malformed:
 
 ```python
-saved_model == VISUAL_EMBEDDING_MODEL
+except Exception as e:
+    print(...)
 ```
 
-That's exactly why the ColPali/ColQwen mismatch survived.
+and the code then continues loading embeddings.
 
-The system should fail with something like:
+That means:
 
 ```text
-Visual index model mismatch:
-index = vidore/colpali-v1.2
-configured = vidore/colqwen2-v1.0
-Rebuild index.
+corrupt metadata
+        ↓
+warning
+        ↓
+possibly load incompatible index
 ```
 
-rather than continuing.
+### Fix
 
-**🔴 MAJOR**
+Treat corrupt index metadata as index invalidation.
 
 ---
 
-# 11. [✓] `TextIndex.load()` has the same class of problem
+## 7. [✓] Visual index doesn't validate corpus identity
 
-It checks:
-
-```python
-len(entries) == len(embeddings)
-```
-
-which is good.
-
-But it does **not** validate:
+It validates model name, but not:
 
 ```text
-embedding model
-embedding dimension
-corpus identity
+which exact documents?
+which exact pages?
+which exact image versions?
 ```
 
-against the current configuration.
-
-If you later change:
+You could have:
 
 ```text
-all-MiniLM-L6-v2
+25 embeddings
+25 entries
 ```
 
-to another embedding model, an old 384-d index could still load.
+but embeddings belong to yesterday's corpus.
 
-**🟠 MAJOR**
+The system would still load them.
+
+### Fix
+
+Store:
+
+```text
+corpus fingerprint
+page-key hash
+document hash
+```
+
+in `index_meta.json`.
 
 ---
 
-# 12. [✓] Visual reranker doesn't actually create new 216-DPI information
+## 8. [✓] Text index has the same stale-corpus problem
 
-This one is subtle but important.
+`TextIndex.load()` validates the number of entries and embedding model, but it doesn't validate that the underlying page text used for those embeddings is unchanged.
 
-You have:
+Imagine:
 
-```python
-VISUAL_RERANK_DPI = 216
+```text
+Day 1:
+page_1.txt → version A
+embedding → A
 ```
 
 Then:
 
-```python
-scale = VISUAL_RERANK_DPI / 144.0
-high_res = page_img.resize(...)
+```text
+Day 2:
+page_1.txt → version B
 ```
 
-So you are doing:
+without rebuilding the index.
+
+Now:
 
 ```text
-144 DPI image
-      ↓
-resize
-      ↓
-"216 DPI"
+dense embedding = A
+BM25 text = B
 ```
 
-This is **upsampling**, not rendering the PDF at 216 DPI.
+The two retrieval signals are operating on different content.
 
-You are not recovering new document detail.
-
-If the original PNG had a tiny table character represented by 4 pixels, resizing it produces a larger 4-pixel character representation—not new source information.
-
-### Proper fix
-
-Render candidate pages directly from the original PDF at a higher DPI, or maintain cached high-res page images.
-
-**🟠 MAJOR**
+This is a genuine consistency bug.
 
 ---
 
-# 13. [✓] Then generation throws away the high-res crop advantage
+## 9. [✓] Visual index can have the same stale-image problem
 
-Visual reranker analyzes:
-
-```text
-high_res crop
-```
-
-but stores:
+Even if the number of pages is identical:
 
 ```text
-best_tile_box
+page_1.png
 ```
 
-in original coordinates.
+could have changed while the saved embedding remains old.
 
-Then generation opens the **original 144-DPI page** and crops it.
+Again:
+
+```text
+embedding ≠ current image
+```
+
+No fingerprint prevents it.
+
+---
+
+## 10. [✓] Visual cache can become stale after rebuilding
+
+`VisualIndex` keeps:
+
+```python
+self._cuda_img_tensors
+```
+
+cached.
+
+But `build_from_processed()` resets:
+
+```python
+self.image_embeddings = []
+```
+
+without explicitly invalidating:
+
+```python
+self._cuda_img_tensors
+```
+
+If rebuilding happens on an already-used index object, the old CUDA tensors can remain.
+
+The length check can incorrectly pass if the new corpus has the same number of pages.
+
+### Fix
+
+Whenever embeddings are rebuilt:
+
+```python
+self._cuda_img_tensors = None
+```
+
+---
+
+## 11. [✓] Visual archive keys are not validated
+
+The loader assumes:
+
+```text
+emb_0
+emb_1
+...
+emb_N
+```
+
+exist.
+
+A corrupted archive could be missing:
+
+```text
+emb_7
+```
+
+and the current loader could crash with a `KeyError`.
+
+It should validate all expected keys before accepting the index.
+
+---
+
+## 12. [✓] Visual archive file is not explicitly closed
+
+You have:
+
+```python
+archive = np.load(npz_file)
+```
+
+without a context manager.
+
+Use:
+
+```python
+with np.load(...) as archive:
+```
+
+This is small, but it's a proper resource-management defect.
+
+---
+
+# 🔴 B. VISUAL RETRIEVAL / RERANKING
+
+## 13. [✓] Your “Visual Reranker” is still not a semantic verifier
+
+`visual_reranker.py` claims:
+
+> visual verification
+
+but it does:
+
+```text
+query embedding
++
+page/tile embedding
++
+MaxSim score
+```
+
+It never asks a VLM:
+
+> “Does this page actually contain the answer to the question?”
+
+So the implementation is:
+
+> **multi-scale visual similarity reranking**
+
+not:
+
+> semantic visual verification.
+
+This matters because your project's research claim depends on this distinction.
+
+---
+
+## 14. [✓] Visual Reranker is just doing CLIP/ColQwen-style similarity on crops
+
+There is no second reasoning model.
 
 So:
 
 ```text
-reranker:
-216-scaled candidate crop
-
-generator:
-144-DPI crop
+full page
+grid tiles
+horizontal bands
 ```
 
-Again, the generator receives less detailed evidence than the reranker inspected.
+are all evaluated with the same retrieval model.
 
-The proper pipeline should preserve:
-
-```text
-high-resolution crop
-```
-
-or render that crop from the PDF at high DPI before sending it.
-
-**🟠 MAJOR**
+That can help locality, but it does not guarantee actual table understanding.
 
 ---
 
-# 14. [✓] Hybrid Reranker is not really using the visual similarity score
+## 15. [✓] The “216 DPI” image is actually an upscaled 144-DPI PNG
 
-This deserves attention.
+This is important.
 
-Current code retrieves visual candidates with:
-
-```python
-visual_candidates = self.visual_index.search(...)
-```
-
-and stores:
+You do:
 
 ```python
-colpali_score
+scale = VISUAL_RERANK_DPI / 144.0
+page_img.resize(...)
 ```
 
-But then:
+So:
+
+```text
+144-DPI source
+       ↓
+resize
+       ↓
+216-DPI-sized bitmap
+```
+
+This does **not create new document detail**.
+
+It's interpolation.
+
+### Correct approach
+
+Render the original PDF at:
+
+```text
+216 DPI
+```
+
+using PyMuPDF directly.
+
+---
+
+## 16. [✓] The high-resolution visual evidence is later converted back to the lower-resolution source
+
+The reranker identifies a box on:
+
+```text
+upsampled image
+```
+
+then maps it back to the original image and `generation.py` reopens the original:
+
+```text
+144-DPI PNG
+```
+
+So the final VLM does not receive the actual high-resolution evidence that the reranker inspected.
+
+---
+
+## 17. [✓] Visual Reranker processes every tile sequentially
+
+For each candidate:
+
+```text
+1 full page
+4 grid tiles
+3 horizontal bands
+```
+
+= **8 model passes per candidate**.
+
+10 candidates:
+
+```text
+~80 forward passes/query
+```
+
+This is highly inefficient.
+
+### Fix
+
+Batch tile images.
+
+---
+
+## 18. [✓] Visual Index also processes pages one-by-one
+
+Current:
+
+```python
+self._encode_images([rgb_img])
+```
+
+inside the page loop.
+
+That prevents effective batching.
+
+For 25 pages it's tolerable.
+
+For 1,000 pages it becomes unnecessarily expensive.
+
+---
+
+## 19. [✓] Visual Reranker has no overlap between grid tiles
+
+A table or important row sitting across a tile boundary gets split.
+
+For example:
+
+```text
+tile 1 | tile 2
+-------+-------
+row content crosses boundary
+```
+
+Neither crop gets the full row.
+
+Overlapping tiles or adaptive region proposals are safer.
+
+---
+
+## 20. [✓] Visual Reranker candidate recall is still limited by Stage 1
+
+Visual mode:
+
+```text
+Visual search
+    ↓
+top 10
+    ↓
+reranker
+```
+
+If the correct page is rank 11:
+
+```text
+never reranked
+never recovered
+```
+
+No second-stage model can recover a candidate it never receives.
+
+You need to measure:
+
+```text
+Visual candidate recall@5
+@10
+@15
+@25
+```
+
+before choosing 10.
+
+---
+
+## 21. [✓] `VISUAL_RERANK_CANDIDATE_SIZE` is not actually controlling the API path
+
+You have configuration:
+
+```python
+VISUAL_RERANK_CANDIDATE_SIZE = 10
+```
+
+but `/api/query` uses:
+
+```python
+visual_index.search(
+    question,
+    top_k=top_k * 2
+)
+```
+
+So with `top_k=5` it gets 10.
+
+Today that's coincidentally equal.
+
+But changing config won't change runtime behavior.
+
+That's configuration drift.
+
+---
+
+## 22. [✓] Visual Reranker error candidates retain a different type of score
+
+When visual processing fails:
+
+```python
+entry["retrieval_method"] = "visual_reranked"
+```
+
+but the score remains the Stage-1 score.
+
+Successful candidates get:
+
+```text
+combined_score
+```
+
+So the final sort compares:
+
+```text
+stage1 score
+vs
+reranked score
+```
+
+under the same `score` field.
+
+Those are not necessarily semantically equivalent.
+
+---
+
+# 🔴 C. HYBRID RERANKER — THIS IS THE BIGGEST ALGORITHM PROBLEM
+
+## 23. [✓] “Hybrid Reranked” is not actually performing real reranking
+
+Current `HybridRerankedRetriever` does:
+
+```text
+Text ranking
++
+Visual ranking
+```
+
+then orders candidates primarily by:
+
+```python
+visual_rank
+```
+
+and generates another rank score.
+
+It does **not** perform:
+
+```text
+text evidence
++
+visual evidence
++
+query-page semantic verification
+```
+
+So the name “Reranked” is stronger than implementation.
+
+---
+
+## 24. [✓] It ignores actual visual relevance score for the main ordering
+
+This:
 
 ```python
 visual_scored = sorted(
@@ -675,1054 +712,1461 @@ visual_scored = sorted(
 )
 ```
 
-So primary ordering is:
+means primary ordering is:
 
-```text
-visual_rank
+```text visual rank
 ```
 
-not the actual visual relevance score.
+not the actual visual score.
 
-Then:
+The actual `colpali_score` only breaks ties.
 
-```python
-local_visual_rank_score =
-    self._rank_score(visual_rank)
-```
-
-So the “rerank score” is basically another transformation of the existing rank.
-
-This isn't a true evidence-based multimodal reranking model.
-
-### In reality it behaves roughly like:
-
-```text
-Text rank
-+
-Visual rank
-+
-Visual rank again
-```
-
-rather than:
-
-```text
-text relevance
-+
-visual relevance
-+
-cross-modal evidence
-```
-
-**🟠 MAJOR**
+That wastes the most useful numeric visual signal.
 
 ---
 
-# 15. [✓] `evidence_signal` is NOT evidence sufficiency
+## 25. [✓] It ignores actual text relevance score too
 
-You have:
+Similarly the Hybrid Reranker primarily converts:
+
+```text
+text rank
+```
+
+to:
+
+```text _rank_score()
+```
+
+rather than using calibrated text score information.
+
+So the algorithm is mainly:
+
+```text rank transformation + rank transformation
+```
+
+instead of:
+
+```text evidence fusion
+```
+
+---
+
+## 26. [✓] TEXT-ONLY candidates get a fake positive visual contribution
+
+This is a real mathematical bug.
+
+For a candidate with:
+
+```text visual_rank = None
+```
+
+you assign:
+
+```python
+visual_rank_score = 0
+```
+
+but later:
+
+```python
+local_visual_rank_score = self._rank_score(visual_rank)
+```
+
+except you pass the **local enumerated rank**, not the missing visual rank.
+
+So even a candidate with:
+
+```text no visual evidence
+```
+
+gets:
+
+```text positive visual rerank score
+```
+
+That means the algorithm is artificially rewarding lack of visual evidence.
+
+This should be fixed.
+
+---
+
+## 27. [✓] Visual-only candidates are also treated inconsistently
+
+Visual-only candidates receive a different formula:
+
+```python
+combined = 0.35 * local_visual_rank_score + 0.15 * initial_visual_score
+```
+
+while text-backed candidates receive:
+
+```python
+0.75 * text_score
++ 0.20 * visual
++ 0.05 * visual
+```
+
+These scores aren't normalized across the two branches.
+
+This makes the resulting `score` hard to interpret.
+
+---
+
+## 28. [✓] `_rank_score(floor=...)` doesn't actually use `floor`
+
+```python
+def _rank_score(rank, floor=0.0, decay=0.1):
+```
+
+But when rank exists, it returns:
+
+```python
+1 / (10 + rank * decay)
+```
+
+and ignores `floor`.
+
+So the parameter is dead.
+
+Not huge, but it's an implementation smell and can create false expectations about score flooring.
+
+---
+
+## 29. [✓] The visual rerank rank is not really “rerank rank”
+
+You construct:
+
+```text
+visual_scored
+```
+
+by visual rank.
+
+Then enumerate that list:
+
+```python
+visual_rerank_rank
+```
+
+So:
+
+> visual rerank rank
+
+is effectively:
+
+> order of candidates after sorting by visual rank.
+
+That isn't an independent reranking signal.
+
+---
+
+## 30. [✓] Hybrid Reranked does not use `VisualReranker`
+
+Despite having:
+
+```text
+VisualReranker
+```
+
+the Hybrid Reranker doesn't invoke it.
+
+That's a significant architecture mismatch.
+
+The intended idea was:
+
+```text
+Text + Visual candidate union
+       ↓
+fine-grained visual inspection
+       ↓
+rerank
+```
+
+Current Hybrid is:
+
+```text
+Text ranking + Visual ranking arithmetic
+```
+
+---
+
+## 31. [✓] Hybrid Reranked doesn't perform actual multimodal evidence verification
+
+There is no stage like:
+
+```text
+candidate page
+      ↓
+VLM:
+"Does this page answer this query?"
+```
+
+So it remains a rank fusion heuristic.
+
+---
+
+## 32. [✓] No query-type routing exists
+
+A query like:
+
+> “What is the IFSC code?”
+
+and:
+
+> “Which column contains the candidate name?”
+
+are fundamentally different tasks.
+
+The system still treats them with the same retrieval policy.
+
+This is a capability gap, especially for your project's intended Visual/Hybrid research.
+
+---
+
+# 🔴 D. EVIDENCE / ABSTENTION
+
+## 33. [✓] `evidence_signal` is still just a ranking score
+
+You return:
 
 ```python
 result["evidence_signal"] = round(combined, 4)
 ```
 
-The name suggests:
+But `combined` is a ranking formula.
 
-> “Does this page contain sufficient evidence?”
+Calling it:
 
-But `combined` is just a ranking formula.
+> evidence signal
 
-A page can score highly and still not contain the answer.
+can mislead downstream logic into treating it as answerability.
+
+A ranking score is not evidence sufficiency.
+
+---
+
+## 34. [✓] The system does not truly determine whether an answer exists
+
+For negative queries:
+
+```text
+Question
+↓
+retrieve best page
+↓
+VLM
+```
+
+The system doesn't have a reliable:
+
+```text
+"Does the answer exist in this evidence?"
+```
+
+classifier/verifier.
+
+This is still missing.
+
+---
+
+## 35. [✓] `generation.py` will call the LLM even for a bad retrieved page
+
+`/api/query` does:
+
+```python
+top_result = results[0]
+generate_answer(...)
+```
+
+No second-stage:
+
+```text
+is this evidence actually relevant?
+```
+
+So top-1 retrieval failure immediately becomes generation input.
+
+---
+
+## 36. [✓] No candidate fallback at generation time
+
+Suppose:
+
+```text
+rank 1 = irrelevant
+rank 2 = correct
+```
+
+The system still gives only:
+
+```text rank 1
+```
+
+to generation.
+
+It doesn't try rank 2.
+
+---
+
+## 37. [✓] Negative-query handling is not connected to actual generation
+
+This is a major evaluation gap.
+
+Your evaluator computes:
+
+```text rejection_signal
+```
+
+but the real API doesn't use the same decision process before generation.
+
+Therefore:
+
+```text benchmark says reject
+```
+
+does not necessarily mean:
+
+```text app actually abstains
+```
+
+---
+
+## 38. [✓] Empty LLM answer is reported as success
+
+In `generation.py`:
+
+```python
+if not answer:
+    answer = ABSTENTION_TEXT
+```
+
+but then it returns:
+
+```text status = "success"
+```
 
 So:
 
-```text
-ranking score ≠ evidence sufficiency
+```text provider returned empty
 ```
 
-This should not be used as an abstention confidence.
+becomes:
 
-**🟠 MAJOR**
+```text successful answer
+```
+
+instead of:
+
+```text abstention/failure
+```
+
+This is a real status bug.
 
 ---
 
-# 16. [✓] Your rejection threshold is effectively useless
+## 39. [✓] No confidence calibration exists
 
-In evaluation:
+Scores like:
+
+```text 0.97
+0.75
+```
+
+are internal ranking values.
+
+There is no calibrated probability:
+
+```text 97% confidence
+```
+
+but the UI/architecture can make those look like confidence.
+
+You need explicit semantics.
+
+---
+
+# 🔴 E. EVALUATION BUGS
+
+## 40. [✓] `run_evaluation.py` claims full-ranking MRR for reranked systems, but they do not return the full ranking
+
+This is important.
+
+For Visual Reranked:
 
 ```python
-"rejection_signal":
-    item["top_result"]["score"] <= 0.0
+stage1 = visual.search(... top_k=10)
+retrieved = visual_reranker.score_candidates(... top_k=page_count)
 ```
 
-This is a problem.
+The reranker only has 10 candidates.
 
-For most retrieval systems:
+It therefore returns at most 10.
 
-```text
-there is always a top result
+So:
+
+```text page_count = 25
 ```
 
-and the score isn't necessarily zero just because the query is unanswerable.
+does NOT mean:
 
-So a negative query like:
-
-> “Who is the Dean of an imaginary department?”
-
-can still get:
-
-```text
-top_score = 0.8
+```text full 25-page ranking
 ```
 
-even though no answer exists.
-
-The current metric therefore does not meaningfully measure rejection.
-
-**🔴 MAJOR**
+for Visual Reranked.
 
 ---
 
-# 17. [✓] Negative-query evaluation doesn't test actual generation abstention
+## 41. [✓] Hybrid Reranked isn't full-corpus either
 
-The benchmark says:
+Candidate union:
 
-```text
-negative query
-→ top score
-→ rejection_signal
-```
-
-But it does not do:
-
-```text
-retrieval
-→ real generation
-→ does system actually abstain?
-```
-
-So even if evaluation says:
-
-```text
-correct rejection
-```
-
-the actual `/api/query` may still call the LLM and generate something.
-
-This is especially dangerous for a RAG system.
-
-**🟠 MAJOR**
-
----
-
-# 18. [✓] `RETRIEVAL_REJECTION_THRESHOLD = 0.0` is never meaningfully integrated
-
-Config:
-
-```python
-RETRIEVAL_REJECTION_THRESHOLD = 0.0
-```
-
-But the generation flow doesn't properly use a coherent thresholding policy around it.
-
-So this looks like a centralized configuration but isn't really controlling answerability.
-
-**🟡**
-
----
-
-# 19. [✓] Hybrid Reranker candidate selection can never recover visual misses
-
-Default:
-
-```python
-HYBRID_CANDIDATE_UNION_SIZE = 10
-```
-
-If the correct page is:
-
-```text
-Visual rank 11
-Text rank 20
-```
-
-it never enters the candidate union.
-
-No second-stage reranker can recover it.
-
-This isn't an implementation crash, but it is a **retrieval recall bottleneck**.
-
-Given your corpus is only 25 pages, I'd test:
-
-```text
-5
-10
-15
-25
-```
-
-and measure candidate recall before deciding.
-
----
-
-# 20. [✓] Visual reranking is still CLIP/ColQwen similarity, not semantic VLM verification
-
-Your comments call it:
-
-> Visual verification
-
-but code does:
-
-```text
-query embedding
+```text 10 text
 +
-image/tile embedding
+10 visual
+```
+
+maximum:
+
+```text ~20 unique pages
+```
+
+not 25.
+
+So again:
+
+> full MRR
+
+is not actually full MRR.
+
+---
+
+## 42. [✓] Evaluation and application use different candidate budgets
+
+Evaluation:
+
+```text Visual Reranked → top 10 stage1
+Hybrid Reranked → union 10+10
+```
+
+Application:
+
+```text Visual Reranked → top_k * 2
+Hybrid → configured candidate union
+```
+
+Currently these may happen to match for top_k=5, but they're not expressed from one source of truth.
+
+The moment someone changes `top_k`, benchmark and application can diverge.
+
+---
+
+## 43. [✓] Evaluation mode name doesn't match backend mode name
+
+Evaluator uses:
+
+```text
+visual_vlm
+```
+
+Backend accepts:
+
+```text
+visual
+vision
+visual_colqwen2
+visual_clip_baseline
+visual_reranked
+```
+
+There is no:
+
+```text visual_vlm
+```
+
+API mode.
+
+This makes the benchmark vocabulary different from the application vocabulary.
+
+---
+
+## 44. [✓] Negative rejection metric is almost useless
+
+You use:
+
+```python
+rejection_signal = top_score <= 0.0
+```
+
+A retriever normally returns a best candidate with some score even when the query is unanswerable.
+
+So:
+
+```text top_score != 0
+```
+
+does not mean:
+
+```text answer exists
+```
+
+This metric will generally be nearly meaningless.
+
+---
+
+## 45. [✓] No threshold calibration for negative queries
+
+The repository doesn't derive a threshold using:
+
+```text validation positives
 +
-similarity
+validation negatives
 ```
 
-It does not ask a multimodal reasoning model:
+It just checks zero.
 
-> “Does this page contain the answer to the question?”
-
-So technically it is:
-
-> **multi-scale visual embedding reranking**
-
-not:
-
-> **semantic visual verification**
-
-This matters for your professor/interview explanation.
-
-**🟠 terminology/architecture issue**
+You need a proper answerability/rejection experiment.
 
 ---
 
-# 21. [✓] [✓] `build_indices.py` does not test the improved Hybrid pipeline
+## 46. [✓] Current evaluation does not evaluate generated answers
 
-Smoke test contains:
+Even though each query has:
 
-```text
-Text
-Visual
-Hybrid RRF
+```text expected_answer
+acceptable_variants
 ```
 
-but not:
+the evaluator doesn't use them.
 
-```text
-Visual Reranked
-Hybrid Reranked
+So:
+
+```text retrieval metrics
 ```
 
-So your build script can report:
+exist, but:
 
-```text
-Done
+```text answer correctness
 ```
 
-while Hybrid Reranked is actually broken.
-
-We proved that already with the `_rank_score(... decay=...)` crash.
-
-**🟠 MAJOR**
+doesn't.
 
 ---
 
-# 22. [✓] [✓] `build_indices.py` doesn't validate the saved index after writing
+## 47. [✓] Current evaluator does not test actual abstention
 
-It builds:
+It tests:
 
-```text
-index
-→ saves it
+```text score <= 0
 ```
 
-but doesn't immediately:
+instead of:
 
-```text
-load it again
-→ query it
+```text actual system response
 ```
 
-A proper smoke test should test the actual persisted artifacts.
+to a negative query.
 
-Otherwise save/load bugs remain hidden.
+Those are not equivalent.
 
 ---
 
-# 23. [✓] `process_documents.py` ignores its `processed_dir` abstraction
+## 48. [✓] Evaluation latency includes negative queries
 
-Function:
+This isn't inherently wrong, but it isn't clearly distinguished from positive-task latency.
 
-```python
-def process_document(pdf_path, output_dir, notice_id)
+For experimental reporting, I'd separately store:
+
+```text positive latency
+negative latency
+overall latency
 ```
-
-is fine.
-
-But the retrieval builders accept:
-
-```python
-build_from_processed(processed_dir)
-```
-
-and then ignore it.
-
-Example:
-
-```python
-del processed_dir
-```
-
-in `TextIndex`.
-
-And VisualIndex uses global:
-
-```python
-METADATA_DIR
-PAGES_DIR
-```
-
-instead.
-
-This makes the functions less reusable and harder to test.
-
-**🟡**
 
 ---
 
-# 24. [✓] Re-running `process_documents.py` can leave stale files
+## 49. [✓] Evaluation output doesn't contain a code/index fingerprint
 
-Suppose old document:
+Results should be tied to:
 
-```text
-page_1 ... page_16
+```text model ID
+index model
+embedding dimension
+corpus hash
+query-set hash
+code version / git commit
+hardware
 ```
 
-Then replacement document becomes:
-
-```text
-page_1 ... page_10
-```
-
-The script doesn't clear the old directory first.
-
-You could end up with:
-
-```text
-page_11.png
-...
-page_16.png
-```
-
-still sitting there.
-
-Then OCR:
-
-```python
-glob("page_*.png")
-```
-
-will process those stale files.
-
-This can create metadata/pages that no longer exist in the PDF.
-
-**🟠 MAJOR**
+Currently the result can be separated from the exact code/index that generated it.
 
 ---
 
-# 25. [✓] `rename_corpus.py` has the same stale-corpus problem
+# 🔴 F. TEXT RETRIEVAL ISSUES
 
-It copies:
+## 50. [✓] Your Text Baseline is not actually a clean RRF baseline
 
-```text
-notice_1.pdf ...
+It contains:
+
+```text BM25
++
+Dense RRF
++
+BM25 dominance bonus
++
+phrase boost
 ```
 
-but doesn't remove old canonical PDFs.
+So the name:
 
-Suppose yesterday you had:
+> Text Baseline
 
-```text
-notice_1 ... notice_10
-```
+hides substantial heuristics.
 
-and today Sample has only:
-
-```text
-notice_1 ... notice_7
-```
-
-The old 8–10 PDFs can remain in `data/raw`.
-
-Then the processing scripts can process them.
-
-**🟠**
+Not necessarily bad—but it is not a clean research baseline.
 
 ---
 
-# 26. [✓] OCR is CPU-only even when GPU exists
+## 51. [✓] Phrase boost is enormous compared to RRF contribution
 
-`ocr_pages.py`:
+Normal RRF:
 
-```python
-easyocr.Reader(["en"], gpu=False)
+```text ~1 / 60 ≈ 0.016
 ```
 
-So OCR always runs CPU-side.
+A phrase match adds:
 
-This isn't a correctness bug, but it's a performance mismatch with the project's “GPU accelerated” framing.
-
-If you want GPU OCR, configure it conditionally.
-
----
-
-# 27. [✓] OCR fallback cannot distinguish an existing stale OCR file from native text by itself
-
-This check:
-
-```python
-existing = text_file.read_text(...)
-if len(existing) >= NATIVE_TEXT_THRESHOLD:
-```
-
-assumes:
-
-> existing text = native text
-
-But the same `.txt` file may have been generated by a previous OCR run.
-
-You partly preserve metadata, but the file itself doesn't contain provenance.
-
-A safer model is:
-
-```text
-native_text
-ocr_text
-selected_text
-text_source
-```
-
-instead of using the same flat `.txt` file as both.
-
-**🟡**
-
----
-
-# 28. [✓] OCR metadata may claim “native” when source provenance is unavailable
-
-Related to the above:
-
-```python
-page_record["text_source"] =
-    page_record.get("text_source", "native")
-```
-
-If metadata is missing but an existing OCR file is present, it becomes labelled:
-
-```text
-native
-```
-
-without proof.
-
-Small today, but bad data lineage.
-
----
-
-# 29. [✓] Hardcoded OCR corrections can corrupt legitimate words
-
-`TextIndex._clean_text()` has:
-
-```python
-re.sub(r'^[I|lJ]+(?=[A-Za-z]{2,})', '', line_clean)
-```
-
-This is dangerous.
-
-It can remove leading letters from legitimate words beginning with:
-
-```text
-I
-l
-J
-|
-```
-
-depending on the pattern.
-
-So a genuine:
-
-```text
-International
-```
-
-could potentially be altered.
-
-OCR repair rules should be much more targeted.
-
-**🟠**
-
----
-
-# 30. [✓] Text retrieval phrase boosting is extremely aggressive
-
-You add:
-
-```python
-rrf_scores[key] += 0.04 * n
-```
-
-Your normal RRF contributions are around:
-
-```text
-~0.015
-```
-
-So one phrase match can add:
-
-```text
-0.08
+```text 0.08
 0.12
 ```
 
-which is several times larger than the normal RRF score.
+depending on phrase length.
 
-This means the “RRF” ranking can actually be dominated by the heuristic phrase boost.
+That is several times larger than normal RRF.
 
-That's okay as a corpus-specific experimental heuristic, but it is not a neutral RRF baseline.
+So your ranking can become:
 
-**🟡 methodological issue**
+```text phrase heuristic
+>
+retrieval fusion
+```
 
 ---
 
-# 31. [✓] BM25 dominance bonus is also huge relative to RRF
+## 52. [✓] BM25 dominance bonus is also very large
 
 ```python
 TEXT_BM25_DOMINANCE_BONUS = 0.025
 ```
 
-Again, RRF scores are around ~0.016.
+Again, normal RRF contribution is roughly:
+
+```text 0.016
+```
+
+So one heuristic bonus is larger than a normal rank contribution.
+
+---
+
+## 53. [✓] Text RRF's K is hardcoded
+
+You use:
+
+```python
+k = 60
+```
+
+inside `TextIndex.search()`.
+
+Meanwhile Hybrid has:
+
+```text HYBRID_RRF_K
+```
+
+So configuration isn't consistent.
+
+---
+
+## 54. [✓] Saved Text index doesn't store the indexed text itself
+
+`text_entries.json` stores metadata, but not full text.
+
+After loading:
+
+```python
+text = TEXT_DIR / ...
+```
+
+is read again.
+
+This makes the saved embedding index dependent on another mutable artifact.
+
+That is what enabled the stale-embedding problem.
+
+---
+
+## 55. [✓] `has_text` can become stale
+
+The loader uses:
+
+```python
+e.get("has_text", ...)
+```
+
+from saved index metadata.
+
+But actual text is re-read.
 
 So:
 
-```text
-+0.025
+```text saved has_text = true
+current text = empty
 ```
 
-is larger than an entire rank contribution.
+can result in:
 
-This means the text baseline is:
-
-```text
-BM25 + Dense + RRF + strong heuristics
+```text has_text = true
+text = ""
 ```
 
-not simply:
-
-```text
-BM25 + Dense + RRF
-```
-
-That's fine, but it should be clearly treated as a heuristic-enhanced baseline.
+This is inconsistent.
 
 ---
 
-# 32. [✓] `visual_reranker` does every tile one-by-one
+## 56. [✓] Text index cannot independently reproduce BM25 from saved artifact
 
-For each candidate:
+Because the index doesn't store the actual text corpus, you cannot reconstruct the exact BM25 corpus from:
 
-```text
-full page
-4 grid tiles
-3 horizontal bands
+```text dense_embeddings.npy
+text_entries.json
 ```
 
-= **8 image encodes per candidate**.
+alone.
 
-And each is separately processed.
+You depend on:
 
-For 10 candidates:
-
-```text
-~80 visual model forward passes
+```text data/processed/text
 ```
 
-per query.
-
-This is extremely expensive.
-
-Batch those tiles together:
-
-```text
-processor.process_images(all_tiles)
-```
-
-and one model call.
-
-This could dramatically reduce latency.
-
-**🟠 performance bug**
+being identical.
 
 ---
 
-# 33. [✓] Visual indexing also embeds pages one-by-one
+# 🔴 G. DOCUMENT/OCR PIPELINE
 
-In:
+## 57. [✓] `process_documents.py` can leave stale page files
+
+If a document previously had:
+
+```text 16 pages
+```
+
+and is later replaced by:
+
+```text 8 pages
+```
+
+the old:
+
+```text page_9.png
+...
+page_16.png
+```
+
+can remain.
+
+Same for `.txt`.
+
+---
+
+## 58. [✓] `ocr_pages.py` will then process those stale pages
+
+It iterates:
 
 ```python
-for page:
-    self._encode_images([rgb_img])
+notice_dir.glob("page_*.png")
 ```
 
-again:
+not the actual current PDF page count.
 
-```text
-1 page → 1 model call
-```
-
-For 25 pages this is wasteful.
-
-Batching would be much more efficient.
-
-**🟡 performance**
+So stale page artifacts become OCR inputs.
 
 ---
 
-# 34. [✓] `VisualIndex.load()` can silently succeed with zero embeddings
+## 59. [✓] `rename_corpus.py` can leave stale canonical PDFs
 
-If neither:
+It copies:
 
-```text
-colpali_embeddings.npz
+```text Sample/*.pdf
 ```
 
-nor:
+into:
 
-```text
-visual_embeddings.npy
+```text data/raw/
 ```
 
-exists, `image_embeddings` remains empty.
+but does not delete old:
 
-Then entries are still loaded.
-
-It prints:
-
-```text
-Visual index loaded: 25 pages
+```text notice_*.pdf
 ```
 
-even though:
+files.
 
-```text
-0 embeddings
+So corpus can silently contain documents that aren't in the current Sample set.
+
+---
+
+## 60. [✓] `Sample*` directory detection is ambiguous
+
+This:
+
+```python
+project_root.glob("Sample*")
 ```
 
-and `search()` simply returns:
+will accept things like:
+
+```text Sample_old/
+Sample_backup/
+Sample_test/
+```
+
+and pick the first directory.
+
+That is not deterministic enough for an ingestion pipeline.
+
+---
+
+## 61. [✓] `assert` is used for file integrity
+
+```python
+assert dest.stat().st_size == pdf.stat().st_size
+```
+
+Assertions can be disabled with:
+
+```bash
+python -O
+```
+
+Integrity checks should use explicit exceptions.
+
+---
+
+## 62. [✓] File size is not a real content fingerprint
+
+The manifest stores:
+
+```text size_bytes
+```
+
+Two different PDFs can have the same byte size.
+
+Use SHA-256.
+
+---
+
+## 63. [✓] `process_document()` doesn't use a context manager for the PDF
+
+Current:
+
+```python
+doc = fitz.open(...)
+...
+doc.close()
+```
+
+If something crashes inside the loop:
+
+```text doc.close()
+```
+
+may never execute.
+
+Use:
+
+```python
+with fitz.open(...) as doc:
+```
+
+---
+
+## 64. [✓] OCR always runs CPU-only
+
+```python
+easyocr.Reader(["en"], gpu=False)
+```
+
+even if CUDA is available.
+
+That's an unnecessary performance bottleneck.
+
+---
+
+## 65. [✓] OCR is English-only
+
+Current:
+
+```python
+Reader(["en"])
+```
+
+Therefore multilingual support is not implemented.
+
+This is especially relevant if future NIT documents include Hindi or mixed-language notices.
+
+---
+
+## 66. [✓] OCR provenance is still flattened into one text file
+
+The system writes:
+
+```text page_1.txt
+```
+
+while metadata records whether it came from:
+
+```text native
+ocr
+```
+
+This creates a dependency between separate artifacts.
+
+A cleaner representation is:
+
+```text native_text
+ocr_text
+selected_text
+```
+
+so you never lose the original extracted source.
+
+---
+
+## 67. [✓] Native/OCR selection is threshold-based rather than quality-based
+
+Current rule:
+
+```python
+if len(existing) >= 10:
+    preserve
+```
+
+Ten characters doesn't mean:
+
+> usable native text.
+
+A page with a wrong/partial native extraction can be preserved unnecessarily.
+
+---
+
+## 68. [✓] OCR metadata and selected text length can disagree
+
+You store `text_length` before/after different transformations, while TextIndex later applies `_clean_text()` and `.strip()`.
+
+So:
+
+```text metadata text_length
+≠
+indexed text_length
+```
+
+This isn't catastrophic, but metadata isn't a perfect description of retrieval text.
+
+---
+
+## 69. [✓] OCR does not preserve reading order explicitly
+
+EasyOCR returns detected regions.
+
+You append them in the detector's returned order.
+
+That order isn't guaranteed to equal perfect document reading order.
+
+This can damage:
+
+```text table reading
+columns
+multi-column notices
+```
+
+---
+
+## 70. [✓] OCR coordinates are stored, but retrieval doesn't use them
+
+You now have:
+
+```text box
+text
+confidence
+```
+
+which is good.
+
+But the downstream text/visual system doesn't use that geometry.
+
+So your strongest OCR information currently isn't connected to the retrieval architecture.
+
+---
+
+# 🟠 H. CORPUS PROFILING DEFECTS
+
+## 71. [✓] `pdfplumber.find_tables()` cannot reliably detect scanned visual tables
+
+Your corpus profiler can say:
+
+```text table_count = 0
+```
+
+for a page that visibly contains a table in the scanned image.
+
+So don't use:
+
+```text table_count
+```
+
+as “does this document have a table?”
+
+---
+
+## 72. [✓] “visual complexity” is not actually visual complexity
+
+Current heuristic:
+
+```python
+len(lines) > 5 or len(rects) > 3
+```
+
+This measures PDF vector geometry.
+
+It does not measure actual visual complexity of scanned pages.
+
+---
+
+## 73. [✓] Scan detection is heuristic and can misclassify pages
+
+Current:
+
+```text images > 0 and text < 20
+```
+
+means:
+
+```text likely scanned
+```
+
+but images inside digital PDFs don't imply scans.
+
+Likewise scanned pages may contain OCR/native text.
+
+This isn't a crash but the metadata semantics should not be treated as ground truth.
+
+---
+
+## 74. [✓] One page profiling failure marks the whole document as error
+
+`profile_document()` has one outer try/except.
+
+If:
+
+```text page.find_tables()
+```
+
+throws for one page:
+
+```text entire document → processing_status = error
+```
+
+Page-level fault isolation is better.
+
+---
+
+# 🟠 I. FASTAPI / BACKEND ISSUES
+
+## 75. [✓] Health endpoint can report visual index loaded when it's empty
+
+Current:
+
+```python
+visual_index.image_embeddings is not None
+```
+
+An empty list:
 
 ```python
 []
 ```
 
-This makes a broken visual index look healthy.
+is still:
 
-**🟠**
+```text not None
+```
+
+So backend can say:
+
+```text visual_index_loaded = true
+```
+
+with zero embeddings.
 
 ---
 
-# 35. [✓] `VisualIndex.load()` doesn't validate embedding count against entries
-
-Text index does:
-
-```python
-if len(raw) != len(self.dense_embeddings):
-    raise ...
-```
-
-Visual does not.
-
-You can have:
-
-```text
-25 entries
-23 embeddings
-```
-
-and it will happily continue.
-
-That must be checked.
-
----
-
-# 36. [✓] `VisualIndex.save()` always labels the index `"colpali_vlm"`
-
-Even when:
-
-```text
-VISUAL_EMBEDDING_MODEL = vidore/colqwen2-v1.0
-```
-
-it writes:
-
-```json
-"index_type": "colpali_vlm"
-```
-
-This is metadata corruption.
-
-Not catastrophic, but it contributed to the current confusion.
-
----
-
-# 37. [✓] `visual_retrieval.py` source comments still say ColPali v1.2
-
-Code says:
-
-```text
-Uses 4-bit quantized ColPali (vidore/colpali-v1.2)
-```
-
-while config uses ColQwen2.
-
-Again, not just documentation; this is in executable source comments and makes maintenance/debugging harder.
-
----
-
-# 38. [✓] Frontend hardcodes `300 DPI` everywhere
-
-But backend base rendering is:
-
-```text
-144 DPI
-```
-
-and visual reranker is merely upsampling to:
-
-```text
-216-equivalent pixels
-```
-
-The UI says:
-
-```text
-300 DPI Vector Index
-```
-
-This is simply not true.
-
----
-
-# 39. [✓] Frontend says BGE, but backend uses MiniLM
-
-Frontend:
-
-```text
-BM25 + BGE dense vector search
-```
-
-Actual:
-
-```text
-all-MiniLM-L6-v2
-```
-
-This is a technical mismatch.
-
-BGE and MiniLM are different embedding model families.
-
----
-
-# 40. [✓] Frontend says Groq Llama-3.3 synthesis, but backend uses Qwen
-
-Frontend:
-
-```text
-Groq Llama-3.3 Synthesis
-```
-
-Config:
-
-```text
-qwen/qwen3.8-27b
-```
-
-Again false.
-
----
-
-# 41. [✓] Frontend falsely displays `"GROQ Active"` even when not active
-
-Header:
-
-```text
-GROQ Active
-```
-
-is hardcoded.
-
-Even when:
-
-```text
-API key missing
-backend offline
-API request failed
-```
-
-it still says:
-
-> GROQ Active
-
-That's misleading UI state.
-
----
-
-# 42. [✓] Frontend falsely displays `ColQwen2 CUDA :0`
-
-This is hardcoded:
-
-```text
-ColQwen2 CUDA :0
-```
+## 76. [✓] Health endpoint always says `status: ok`
 
 Even if:
 
-```python
-torch.cuda.is_available() == False
+```text text index unavailable
+visual index empty
+generation provider unavailable
 ```
 
-or the visual model hasn't loaded.
+it still reports:
 
-Again, UI claims runtime state without reading runtime state.
+```json
+"status": "ok"
+```
+
+This is misleading.
 
 ---
 
-# 43. [✓] Frontend API provider state is fake
+## 77. [✓] Health endpoint doesn't report whether generation is actually ready
 
-Frontend has:
+It reports:
 
-```javascript
-const [apiProvider, setApiProvider] = useState(...)
+```text llm_provider = groq
+configured_model = ...
 ```
 
-but backend `/api/set-key` always does:
+but doesn't verify:
+
+```text API credential valid
+model actually accessible
+```
+
+---
+
+## 78. [✓] `/api/set-key` ignores the `provider` request field
+
+Frontend sends:
+
+```json
+{
+  "provider": "...",
+  "api_key": "..."
+}
+```
+
+Backend always does:
 
 ```python
-cfg.GROQ_API_KEY = request.api_key
 cfg.LLM_PROVIDER = "groq"
 ```
 
-and ignores:
-
-```text request.provider
-```
-
-So the frontend can believe it saved one provider while backend actually stored Groq.
-
-This is a contract bug.
+So the API contract contains a fake provider abstraction.
 
 ---
 
-# 44. [✓] API key is stored in browser localStorage
+## 79. [✓] `/api/set-key` persists secrets despite saying “session”
 
-Frontend:
+It returns:
 
-```javascript
-localStorage.setItem('llm_api_key', apiKey)
+> key set for this server session
+
+but writes:
+
+```text data/keys.json
 ```
 
-That means any script running in that browser origin can potentially access it.
-
-For local demo:
-
-```text acceptable with caution
-```
-
-For production:
-
-```text bad security design
-```
+So it's not session-only.
 
 ---
 
-# 45. [✓] API key is also written to `data/keys.json`
-
-Backend:
+## 80. [✓] Persistence failure is silently swallowed
 
 ```python
-keys_data["groq"] = request.api_key
-keys_data["api_key"] = request.api_key
-keys_file.write_text(...)
+except Exception:
+    pass
 ```
 
-So the server persists the secret in plaintext.
+Then endpoint still returns:
 
-Worse:
+```text status=ok
+```
 
-### Your ZIP actually contains `data/keys.json` with a non-empty credential.
+So the client is told:
 
-Even though Git ignores it, the ZIP artifact contains it.
+> success
 
-**Revoke/rotate that key immediately.**
-
-This is the most important security issue.
+even if persistence failed.
 
 ---
 
-# 46. [✓] `list_groq_models.py` leaks part of the API key
+## 81. [✓] `/api/set-key` can overwrite a valid environment key
 
-It does:
+If a client sends an arbitrary key, server memory gets overwritten:
 
 ```python
-print(
-    f"Key available: {bool(key)}, "
-    f"starts with: {key[:8] if key else 'N/A'}"
-)
+cfg.GROQ_API_KEY = request.api_key
 ```
 
-Never log key prefixes unnecessarily.
-
-Even a prefix can become sensitive when logs are shared.
+There is no authentication/authorization.
 
 ---
 
-# 47. [✓] `config.load_persistent_keys()` gives disk key priority over environment key
+## 82. [✓] CORS is completely open
 
-If both exist:
-
-```text
-GROQ_API_KEY environment
-data/keys.json
+```python
+allow_origins=["*"]
 ```
 
-the JSON value wins.
+That means any origin can call:
 
-Normally I'd prefer:
-
-```text
-explicit environment configuration
->
-local persisted configuration
+```text /api/set-key
+/api/query
 ```
 
-because environment variables are often the intended secret injection mechanism.
+while your server is running.
+
+For a localhost-only academic demo this is manageable, but it is not safe server configuration.
 
 ---
 
-# 48. [✓] `handleQuery()` doesn't check HTTP status
+## 83. [✓] No authentication exists for sensitive endpoints
 
-Frontend:
+Anyone who reaches the backend can use:
 
-```javascript
-const res = await fetch(...)
-const data = await res.json()
-setResult(data)
+```text /api/set-key
+/api/query
+/api/pages
 ```
 
-No:
+The first one is particularly sensitive.
 
-```javascript
-if (!res.ok) ...
+---
+
+## 84. [✓] Generation exceptions contain raw provider exception text
+
+`generation.py` stores:
+
+```python
+"error": str(exc)
 ```
 
-So:
+This could expose provider internals or request details.
 
-```text
-422
+The app currently doesn't forward all of that, but the internal object still carries it.
+
+---
+
+## 85. [✓] No retry/backoff for provider failures
+
+A temporary:
+
+```text 429
 500
-503
+timeout
 ```
 
-can enter the normal result pipeline.
+immediately becomes an error.
 
-This is directly relevant to the `"vision"` bug.
+No bounded retry exists.
 
 ---
 
-# 49. [✓] Same HTTP-status bug in Compare
+## 86. [✓] OpenAI client is recreated on every generation request
 
-`handleCompare()` also doesn't check:
-
-```text res.ok
+```python
+client = OpenAI(...)
 ```
 
-So a server error can be treated as a comparison payload.
+each time.
+
+Connection/client reuse would be more efficient.
+
+Not a correctness problem, but a performance defect.
 
 ---
 
-# 50. [✓] Same issue when saving API key
+## 87. [✓] No image-size/payload guard before sending base64 PNG to provider
 
-`saveApiKey()` checks:
+Full PNG is converted to:
 
-```javascript
-if (data.status === 'ok')
+```text base64
 ```
 
-but doesn't separately handle non-2xx responses.
+with no explicit payload-size ceiling.
 
-A FastAPI validation/error response gets treated as a normal JSON object.
+Large/high-resolution documents can create large API requests.
 
 ---
 
-# 51. [✓] Search requests can race each other
+## 88. [✓] Unknown direct `generate_answer()` mode defaults toward Visual
 
-Suppose user clicks Search twice quickly:
+After handling known Text/Hybrid modes:
+
+```python
+return _provider_result(... image_path=...)
+```
+
+So if some internal caller sends:
+
+```text mode="banana"
+```
+
+it gets visual behavior instead of rejection.
+
+API validation prevents this externally, but internal function behavior is unsafe.
+
+---
+
+# 🟠 J. FRONTEND / BACKEND CONTRACT ISSUES
+
+## 89. [✓] The UI still hardcodes the corpus metadata—and several entries are wrong
+
+`CORPUS_DOCS` contains incorrect mappings.
+
+For example:
 
 ```text
-Request A
-Request B
+notice_3 → Fee Payment
 ```
 
-If B finishes first:
+but actual notice_3 is the **Guest Coaches** notice.
 
-```text B result shown
+```text
+notice_4 → Hostel Allocation
 ```
 
-then A finishes:
+but actual notice_4 is **Captains/Vice-Captains**.
 
-```text A result overwrites B
+```text
+notice_5 → Academic Regulations
 ```
 
-There is no request ID or `AbortController`.
+but actual notice_5 is the **M.Tech/IAT admission** document.
 
-This is a classic asynchronous UI race.
+```text
+notice_6 → Dean Academic Circular
+```
+
+but actual notice_6 is **Autumn Semester Fee Payment**.
+
+This is a real user-facing data bug.
 
 ---
 
-# 52. [✓] Toast timers can overwrite each other
+## 90. [✓] Frontend hardcodes “BGE”
 
-```javascript
-setToastMessage(msg)
-setTimeout(() => setToastMessage(''), 2800)
+Actual model:
+
+```text all-MiniLM-L6-v2
 ```
 
-If:
+UI says:
 
-```text Toast A
-↓
-Toast B 1 sec later
+```text BGE dense vector search
 ```
 
-the timer from A fires at 2.8 sec and clears B.
-
-Minor, but real.
+Wrong.
 
 ---
 
-# 53. [✓] Selected evidence highlighting is broken
+## 91. [✓] Frontend hardcodes “Groq Llama-3.3”
 
-Frontend compares:
+Actual model:
+
+```text qwen/qwen3.8-27b
+```
+
+Wrong.
+
+---
+
+## 92. [✓] Frontend hardcodes “300 DPI Vector Index”
+
+Actual base page images:
+
+```text ~144 DPI
+```
+
+and reranker currently upsamples rather than genuinely rendering 300 DPI.
+
+Wrong.
+
+---
+
+## 93. [✓] Frontend hardcodes fake OCR accuracy
+
+For notice 1:
+
+```text OCR 99.4%
+```
+
+There is no runtime measurement providing that value.
+
+This should not appear unless actually benchmarked.
+
+---
+
+## 94. [✓] Frontend hardcodes fake VLM RAM usage
+
+```text 1.82 GB
+```
+
+This is not read from runtime.
+
+It can easily become false when model/config changes.
+
+---
+
+## 95. [✓] Frontend hardcodes page count fallback
 
 ```javascript
-selectedEvidence?.doc_id === page.doc_id &&
+health?.total_pages || 25
+```
+
+So if actual backend says:
+
+```text 0
+```
+
+or fails to load:
+
+```text UI displays 25
+```
+
+This masks failure.
+
+---
+
+## 96. [✓] Frontend hardcodes document-count fallback
+
+```javascript
+documents.length || 7
+```
+
+Again:
+
+```text empty backend
+→ UI says 7 documents
+```
+
+This is misleading.
+
+---
+
+## 97. [✓] The selected-evidence comparison is broken
+
+Frontend checks:
+
+```javascript
 selectedEvidence?.page_num === page.page_num
 ```
 
 Backend returns:
 
 ```text page_number
+page
 ```
 
 not:
@@ -1730,552 +2174,645 @@ not:
 ```text page_num
 ```
 
-So the selected evidence state cannot match properly.
+Therefore:
+
+```text undefined === undefined
+```
+
+can make multiple cards appear selected.
+
+This is a real UI bug.
 
 ---
 
-# 54. [✓] Frontend uses hardcoded corpus metadata instead of backend metadata
+## 98. [✓] Compare mode still only compares three baselines
 
-`CORPUS_DOCS` contains all 7 document descriptions.
+Backend:
 
-The backend already exposes:
-
-```text /api/documents
+```python
+modes = [
+    "text_baseline",
+    "visual",
+    "hybrid_rrf_baseline",
+]
 ```
 
-but the UI still renders:
+It does NOT include:
 
-```javascript
-CORPUS_DOCS.map(...)
+```text visual_reranked
+hybrid_reranked
 ```
 
-Therefore when corpus changes:
-
-```text backend corpus = new document
-frontend = old document
-```
-
-This can silently become wrong.
-
-For your future expansion, this is a serious maintainability problem.
+So your best/new algorithms aren't actually shown in Compare All.
 
 ---
 
-# 55. [✓] Frontend falls back to fake numbers instead of saying “unknown”
+## 99. [✓] The UI calls this “Tri-Modal Evaluation”
 
-Examples:
+But there are only two information modalities:
+
+```text Text
+Visual
+```
+
+Hybrid is a retrieval mode combining those.
+
+So:
+
+```text 3 modes
+≠
+3 modalities
+```
+
+This is conceptually incorrect UI terminology.
+
+---
+
+## 100. [✓] Compare mode invents timing when backend hasn't supplied it
+
+Backend per mode returns:
+
+```text retrieval_time_ms
+generation_time_ms
+```
+
+but not:
+
+```text total_time_ms
+```
+
+Then frontend calculates:
 
 ```javascript
-data.total_time_ms || 420
-```
-
-and:
-
-```javascript
-data.total_time_ms || 79107
-```
-
-and:
-
-```text 10700
-10782.40
-10600
-10714.20
-10899.10
-```
-
-Those are hardcoded fake telemetry values.
-
-This is especially bad for a research/demo system because it can show a runtime number that wasn't measured for that query.
-
-Never do this.
-
-Use:
-
-```text
-—
+retrieval_time + 10700
 ```
 
 or:
 
-```text unavailable
+```javascript
+retrieval_time + 10600
 ```
 
-when the real metric isn't available.
+Those are fake values.
 
 ---
 
-# 56. [✓] Compare UI is not actually comparing the improved modes
+## 101. [✓] Compare total latency fallback is also fake
 
-Backend `/api/compare` only runs:
-
-```text
-text_baseline
-visual
-hybrid_rrf_baseline
+```javascript
+'79,107ms'
 ```
 
-It does **not** run:
-
-```text
-visual_reranked
-hybrid_reranked
-```
-
-So your UI's:
-
-> Side-by-Side Tri-Modal Evaluation
-
-is only comparing baselines.
-
-That's fine if intentional, but not if the project claims the improved pipeline is being compared.
+is hardcoded.
 
 ---
 
-# 57. [✓] UI says “Tri-Modal” when there are only two retrieval modalities
+## 102. [✓] Retrieval score fallbacks are fake
 
-Your actual retrieval modalities are:
+Examples:
 
-```text
-Text
-Visual
+```javascript
+|| 0.032
+|| 12.54
+|| 0.0162
 ```
 
-Hybrid is a combination of those two.
+So a missing score gets a made-up score displayed.
 
-Calling:
-
-```text
-Text + Visual + Hybrid
-```
-
-“tri-modal” is conceptually misleading.
-
-There are three **modes**, not three modalities.
-
-Better:
-
-> Retrieval Mode Comparison
+That's unacceptable for a benchmarking UI.
 
 ---
 
-# 58. [✓] React StrictMode causes duplicate startup effects in development
+## 103. [✓] Answer fallbacks are fake
 
-`main.jsx` uses:
+For example:
+
+```text Extracted textual contents from administrative circular.
+```
+
+If backend returns no answer, UI can present synthetic placeholder text as though it were an actual answer.
+
+That is dangerous.
+
+---
+
+## 104. [✓] Source fallbacks are fake
+
+UI contains defaults like:
+
+```text notice_1.pdf p.1
+notice_2.pdf p.1
+```
+
+when real backend source isn't available.
+
+That can make a failed retrieval look successful.
+
+---
+
+## 105. [✓] Footer reports fake 420 ms E2E latency
+
+```text E2E Latency: 420ms
+```
+
+hardcoded.
+
+This must go.
+
+---
+
+## 106. [✓] Header claims Groq is active regardless of actual health
+
+```text GROQ Active
+```
+
+is hardcoded.
+
+Backend can be offline and UI still says active.
+
+---
+
+## 107. [✓] Header claims ColQwen2 CUDA :0 regardless of actual runtime
+
+```text ColQwen2 CUDA :0
+```
+
+is hardcoded.
+
+If CUDA isn't available:
+
+```text still says CUDA :0
+```
+
+---
+
+## 108. [✓] Startup saved-key restoration doesn't check HTTP success
+
+This:
+
+```javascript
+fetch(...).then(r => r.json())
+```
+
+does not verify `r.ok`.
+
+So the UI can consider a stored key successfully restored even if the backend rejected it.
+
+---
+
+## 109. [✓] React StrictMode can execute the saved-key restoration effect twice during development
+
+Because:
 
 ```jsx
 <StrictMode>
 ```
 
-and App's startup `useEffect()`:
+and the effect performs:
 
-```text
-health request
-documents request
-key initialization
+```text POST /api/set-key
 ```
 
-In React development mode, StrictMode intentionally re-runs effects to reveal side effects.
+you can get duplicate key-setting requests during development.
 
-So you can get duplicate:
-
-```text /api/health
-/api/documents
-/api/set-key
-```
-
-requests during development.
-
-Not production-critical, but your API-key initialization makes this particularly undesirable.
+Not production-critical, but bad because this effect has a side effect.
 
 ---
 
-# 59. [✓] The frontend relies on Tailwind CDN instead of bundled Tailwind
+## 110. [✓] Aborting frontend fetch does not stop backend computation
+
+`AbortController` stops the browser waiting for the response.
+
+It does **not** cancel the synchronous FastAPI execution already underway.
+
+So:
+
+```text Query A
+↓
+GPU/model/API work continues
+
+user starts Query B
+↓
+browser aborts A
+```
+
+Server may still finish A.
+
+This can waste GPU/API resources.
+
+---
+
+## 111. [✓] Search requests are protected from stale UI updates, but server work still races
+
+Your frontend request cancellation fixed the UI race somewhat, but server-side work is still independent.
+
+So this is only a partial fix.
+
+---
+
+## 112. [✓] Image load failures are not handled
+
+If:
+
+```text /api/pages/... → 404
+```
+
+the `<img>` simply breaks.
+
+No fallback state is shown.
+
+---
+
+## 113. [✓] Document cards use array index as React key
+
+```jsx
+key={idx}
+```
+
+For a static seven-document array this isn't immediately harmful, but once documents become dynamic, reordering can cause incorrect DOM reuse.
+
+Use:
+
+```text noticeId
+```
+
+as key.
+
+---
+
+## 114. [✓] Search result cards also use array index as key
+
+Same issue:
+
+```jsx
+key={idx}
+```
+
+Better key:
+
+```text notice_id + page_number
+```
+
+---
+
+# 🟠 K. FRONTEND PACKAGING / BUILD
+
+## 115. [✓] `frontend/node_modules` is still inside the ZIP
+
+It contains platform-specific native binaries.
+
+I attempted a real Vite build and it failed because the bundled native `rolldown` bindings don't match this Linux environment.
+
+This is exactly why `node_modules` should never be committed/packaged.
+
+---
+
+## 116. [✓] `frontend/dist` is also packaged despite `.gitignore`
+
+You have generated build output inside the ZIP.
+
+That isn't necessarily bad, but because it is ignored and regenerated separately, it can become stale.
+
+And yours is stale.
+
+---
+
+## 117. [✓] `dist` and `src` are not necessarily the same frontend version
+
+The packaged dist still contains old hardcoded UI content.
+
+So someone inspecting:
+
+```text
+src/
+```
+
+and someone opening:
+
+```text dist/
+```
+
+can see different implementations.
+
+---
+
+## 118. [✓] Tailwind is being loaded from CDN
 
 `index.html` contains:
 
 ```html
-<script src="https://cdn.tailwindcss.com?..."></script>
+<script src="https://cdn.tailwindcss.com/..."></script>
 ```
 
-This means your build is **not self-contained**.
+So the application depends on internet access for styling.
 
-If the machine/browser is offline:
+That means:
 
-```text Tailwind utility classes aren't generated
+```text
+offline environment
+→ Tailwind utility generation unavailable
 ```
 
-and much of the UI styling can disappear.
+and the interface can degrade badly.
 
-For a college lab/demo network, this is a real deployment risk.
+For a production-style build, use actual Tailwind/PostCSS build tooling or another bundled CSS solution.
 
 ---
 
-# 60. [✓] Google Fonts and Material Symbols also depend on external network
+## 119. [✓] Google Fonts are remote
 
-You load:
+Same issue:
 
 ```text
 fonts.googleapis.com
 ```
 
-and Material Symbols externally.
-
-Offline environment:
-
-```text fonts/icons unavailable
-```
-
-Again not fatal, but not self-contained.
+No internet → fallback fonts.
 
 ---
 
-# 61. [✓] Frontend dependency installation is not reproducible from this ZIP in the current environment
+## 120. [✓] Material Symbols are remote
 
-I attempted:
-
-```bash
-npm run build
-```
-
-and got:
-
-```text
-vite: Permission denied
-```
-
-because bundled:
-
-```text
-node_modules/.bin/vite
-```
-
-is not executable.
-
-Running Vite directly then hit:
-
-```text
-Cannot find native binding
-@rolldown/binding-linux-x64-gnu
-```
-
-The cause is the packaged `node_modules` being platform/environment-specific.
-
-### Correct packaging
-
-Do not ship:
-
-```text
-frontend/node_modules
-```
-
-Ship:
-
-```text
-package.json
-package-lock.json
-```
-
-Then:
-
-```bash
-npm install
-npm run build
-```
+Same issue.
 
 ---
 
-# 62. [✓] Python dependencies are incomplete
+# 🟠 L. SECURITY
 
-Your code imports packages that `requirements.txt` does not explicitly list.
+## 121. [✓] A real-looking Groq API key is present in `data/keys.json`
 
-Missing direct dependencies include:
+This is serious.
 
-```text
-openai
-colpali-engine
-bitsandbytes
-pdfplumber
-```
-
-Yet the code uses them.
-
-Current requirements contains:
+The current ZIP contains:
 
 ```text
-groq
+data/keys.json
 ```
 
-but generation actually imports:
+with a non-empty:
+
+```text gsk_...
+```
+
+### Action
+
+**Revoke/rotate that key immediately.**
+
+Do not merely delete the local file.
+
+---
+
+## 122. [✓] `.gitignore` protects `data/keys.json`, but the ZIP still contains it
+
+This is why:
+
+> “It's in `.gitignore`, so we're safe.”
+
+is not enough.
+
+The ZIP itself is already carrying the secret.
+
+---
+
+## 123. [✓] Browser localStorage stores the API key
+
+Frontend:
+
+```javascript
+localStorage.setItem('llm_api_key', apiKey)
+```
+
+Any script able to execute in that origin could potentially access it.
+
+For a local prototype, it's a convenience.
+
+For a deployable service, don't do this.
+
+---
+
+## 124. [✓] Backend persists the key in plaintext JSON
+
+This is worse:
+
+```text data/keys.json
+```
+
+contains the secret directly.
+
+---
+
+## 125. [✓] `list_groq_models.py` prints the first 8 characters of the key
 
 ```python
-from openai import OpenAI
+key[:8]
 ```
 
-### Fresh-clone problem
-
-A clean environment can fail even before running the app.
+Don't log secret material at all.
 
 ---
 
-# 63. [✓] `profile_corpus.py` literally claims pdfplumber is already installed
+## 126. [✓] Backend exposes `/api/set-key` cross-origin
 
-But `requirements.txt` doesn't install it.
+Combined with:
 
-So a fresh environment can fail:
+```text allow_origins=["*"]
+```
+
+this gives arbitrary origins a path to modify the active server key.
+
+Restrict it.
+
+---
+
+# 🟡 M. REPOSITORY / GIT HYGIENE
+
+## 127. [✓] `.git` itself is included in the ZIP
+
+The ZIP contains:
+
+```text .git/
+```
+
+That is unnecessary for sharing a source archive and can expose:
+
+```text commit history
+remote URL
+author identity
+old files
+```
+
+---
+
+## 128. [✓] Git config contains personal identity information
+
+`.git/config` has configured user information and remote repository details.
+
+For source sharing, you generally don't want to distribute the local `.git` directory.
+
+---
+
+## 129. [✓] Generated indexes are tracked in Git
+
+You currently have:
+
+```text data/embeddings/text/*
+data/embeddings/visual/*
+```
+
+tracked.
+
+That is not inherently wrong, but it creates a reproducibility trap:
+
+```text code changes
+but index remains old
+```
+
+which is exactly what happened with ColPali/ColQwen2.
+
+Either:
+
+```text version the index with strict fingerprints
+```
+
+or:
+
+```text rebuild indexes from raw/processed data
+```
+
+and document that workflow.
+
+---
+
+## 130. [✓] Processed artifacts are also tracked independently
+
+You have:
+
+```text data/processed/*
+```
+
+tracked along with the raw PDFs and indices.
+
+So now there are three derived layers that can drift:
+
+```text raw PDFs
+processed pages/text
+embeddings
+```
+
+Without automated consistency checks, this becomes fragile.
+
+---
+
+# 🟡 N. DEPENDENCIES / REPRODUCIBILITY
+
+## 131. [✓] Dependency versions are not pinned
+
+`requirements.txt` uses things like:
+
+```text torch>=2.0.0
+transformers>=4.40.0
+```
+
+A future `pip install` can resolve a very different dependency graph.
+
+For a research system, use tested versions or a lockfile.
+
+---
+
+## 132. [✓] No automated regression-test suite exists
+
+There are no proper tests protecting:
+
+```text index compatibility
+mode routing
+retrieval
+reranking
+API schema
+abstention
+frontend/backend contracts
+```
+
+That is why so many regressions have survived across iterations.
+
+---
+
+## 133. [✓] `build_indices.py` smoke test is not enough
+
+It does run the five retrieval modes, which is good.
+
+But it doesn't assert:
+
+```text expected document
+expected page
+```
+
+So:
+
+```text wrong page
+```
+
+still counts as:
+
+```text smoke test passed
+```
+
+---
+
+## 134. [✓] Persistence smoke test doesn't validate semantic equivalence
+
+You save the index, reload it, then confirm it can load.
+
+But you don't verify:
+
+```text pre-save ranking
+==
+post-load ranking
+```
+
+That would be a valuable regression test.
+
+---
+
+## 135. [✓] No test that current app retrieval matches evaluator retrieval
+
+That is why:
+
+```text evaluation pipeline
+≠
+runtime pipeline
+```
+
+can drift.
+
+A single shared benchmark function would reduce this.
+
+---
+
+# 🟡 O. SMALLER CODE QUALITY DEFECTS
+
+## 136. [✓] `VALID_MODES` is duplicated with `ModeLiteral`
+
+`config.py` defines:
 
 ```python
-import pdfplumber
+VALID_MODES
 ```
 
-unless something else happens to bring it in.
-
----
-
-# 64. [✓] `bitsandbytes` isn't listed
-
-But CUDA visual loading does:
+while `app.py` defines:
 
 ```python
-BitsAndBytesConfig(
-    load_in_4bit=True,
-    ...
-)
+ModeLiteral
 ```
 
-and relies on bitsandbytes runtime support.
+These are two sources of truth.
 
-Fresh environment:
+They're already drifting.
 
-```text
-visual model load
-→ possible package failure
-```
+Use one.
 
 ---
 
-# 65. [✓] ColPali/ColQwen dependency isn't explicitly listed
-
-This line:
-
-```python
-from colpali_engine.models import ColQwen2
-```
-
-requires:
-
-```text
-colpali-engine
-```
-
-but it isn't in `requirements.txt`.
-
-That's a direct reproducibility bug.
-
----
-
-# 66. [✓] Current environment can import backend retrieval modules but not generation/app
-
-This is worth documenting because it demonstrates exactly where dependency/runtime health is currently:
-
-```text
-config                 ✅
-path_utils             ✅
-text_retrieval         ✅ import
-visual_retrieval       ✅ import
-visual_reranker        ✅ import
-hybrid_retrieval       ✅ import
-hybrid_reranker        ✅ import
-generation             ❌
-app                    ❌
-```
-
-So compilation alone is not enough.
-
----
-
-# 67. [✓] The current `results.json` reports a ColPali benchmark but README/UI call it ColQwen2
-
-Even leaving the docs aside, this is a **data artifact vs source-code mismatch**.
-
-The result file says:
-
-```text
-visual_colpali_vlm
-```
-
-while current source config says:
-
-```text
-colqwen2-v1.0
-```
-
-Therefore results are not trustworthy as current-code evidence.
-
----
-
-# 68. [✓] Evaluation latency warmup is incomplete
-
-The evaluator warms:
-
-```text
-Text
-Visual
-```
-
-but not:
-
-```text Visual Reranker
-Hybrid Reranker
-```
-
-So first reranker query can include additional model/runtime initialization.
-
-Therefore:
-
-```text Visual Reranked latency
-```
-
-isn't necessarily warm-equivalent.
-
----
-
-# 69. [✓] Evaluation runs modes with full corpus but the app doesn't
-
-Already mentioned, but this is important enough to emphasize:
-
-```text benchmark:
-candidate_k = 25
-
-app:
-candidate_k ≈ 10 or top_k
-```
-
-So the reported benchmark and real app are different algorithms.
-
----
-
-# 70. [✓] `run_evaluation.py` doesn't measure answer accuracy despite having expected answers
-
-Your query file contains:
-
-```text expected_answer
-acceptable_variants
-```
-
-but the evaluator only evaluates retrieval.
-
-That's fine architecturally, but it means you currently cannot say:
-
-```text end-to-end QA accuracy = X%
-```
-
-without another evaluator.
-
----
-
-# 71. [✓] MRR is now technically full-ranking, but only because evaluation retrieves all pages
-
-This is actually a good change in the evaluator, but it creates another mismatch:
-
-```text benchmark = full 25-page ranking
-runtime = top-k candidate retrieval
-```
-
-Again, benchmark protocol doesn't match deployment behavior.
-
----
-
-# 72. [✓] Current visual model index caching can consume large GPU memory
-
-This code:
-
-```python
-self._cuda_img_tensors = [
-    torch.from_numpy(emb).to(...)
-    for emb in self.image_embeddings
-]
-```
-
-keeps all page vectors on GPU.
-
-For 25 pages that's probably fine.
-
-At 1,000+ pages, this becomes a scaling problem.
-
-Not a current bug, but an architectural scaling trap.
-
----
-
-# 73. [✓] Visual search has no batch-size control
-
-The current query processing:
-
-```python
-processor.process_queries([query])
-```
-
-is fine for one query.
-
-But evaluation runs every query separately.
-
-For benchmark throughput you could batch queries, though latency-per-query research may intentionally stay separate.
-
-Not a correctness bug.
-
----
-
-# 74. [✓] Visual generation sends full PNG base64 payloads
-
-`generation.py` converts the image to:
-
-```text base64 PNG
-```
-
-and puts it directly into the chat payload.
-
-This can make request bodies very large.
-
-You should have:
-
-```text max image dimensions
-max payload size
-crop preference
-```
-
-for predictable API behavior.
-
-Not necessarily broken on current pages.
-
----
-
-# 75. [✓] `generation.py` imports `Path` but doesn't meaningfully use its old `project_root` parameter
-
-Not a functional issue, just leftover API compatibility code:
-
-```python
-del project_root
-```
-
-This tells you the API evolved without cleanup.
-
----
-
-# 76. [✓] `app.py` imports `PAGES_DIR` but page route resolves through `path_utils`
-
-Minor unused import / stale architecture.
-
----
-
-# 77. [✓] `generation._resolve_image()` imports `PAGES_DIR` but doesn't use it
-
-Again leftover code.
-
-Not important, but shows cleanup remains.
-
----
-
-# 78. [✓] `Optional` imports and some config entries are dead
+## 137. [✓] Several configuration values are currently dead or only partially wired
 
 Examples:
 
@@ -2286,733 +2823,427 @@ VISUAL_RERANK_CANDIDATE_SIZE
 RETRIEVAL_REJECTION_THRESHOLD
 ```
 
-not consistently consumed.
-
-Dead configuration is dangerous because it gives the impression something is configurable when it isn't.
+not all directly control the runtime paths that their names suggest.
 
 ---
 
-# 79. [✓] `VALID_MODES` is not the actual source of API validation
+## 138. [✓] `build_from_processed(processed_dir)` doesn't actually use the argument
 
-You define:
+Both Text and Visual implementations effectively rely on global config paths.
 
-```python
-VALID_MODES
-```
-
-but Pydantic uses a separate:
-
-```python
-Literal[...]
-```
-
-So now there are two mode definitions that can diverge.
-
-They already have diverged because:
-
-```text VALID_MODES includes visual_colqwen2
-```
-
-but `ModeLiteral` does not.
-
-Use one source of truth.
+That makes them less reusable and harder to test.
 
 ---
 
-# 80. [✓] Hybrid weights are centralized correctly now, but Text RRF K is not
+## 139. [✓] `generation.py` imports unused `PAGES_DIR`
 
-Hybrid uses:
-
-```python
-HYBRID_RRF_K
-```
-
-Text search still hardcodes:
-
-```python
-k = 60
-```
-
-So there isn't one retrieval configuration strategy.
-
-Minor, but easy to fix.
+Minor dead code.
 
 ---
 
-# 81. [✓] `api_key` field accepts arbitrary content up to 500 characters
+## 140. [✓] `visual_retrieval.py` has stale “ColPali” naming everywhere
 
-You only validate length:
+Function names:
 
-```python
-Field(min_length=10, max_length=500)
+```text _get_colpali
 ```
 
-No provider-specific validation.
+Comments:
 
-For a prototype that's okay, but it means anything can be stored as a “key.”
+```text ColPali
+```
 
-Not a major concern.
+even though config now switches dynamically between:
+
+```text ColPali
+ColQwen2
+```
+
+The naming can mislead future maintainers.
+
+A generic:
+
+```text _get_visual_model()
+```
+
+would be cleaner.
 
 ---
 
-# 82. [✓] API key endpoint writes plaintext credentials even when file write fails silently
+## 141. [✓] `visual_retrieval.py` save filename still says `colpali`
 
-This:
+Even if model is ColQwen2:
 
-```python
-try:
-    ...
-except Exception:
-    pass
+```text colpali_embeddings.npz
 ```
 
-means security/storage errors are silently ignored.
+is saved.
 
-You can't know whether the server successfully persisted the requested state.
+That's a needless source of ambiguity.
 
-Better to explicitly report:
+Use:
 
-```text persisted=false
+```text visual_embeddings.npz
 ```
 
-or don't persist at all.
+or model-specific artifact metadata.
 
 ---
 
-# 83. [✓] `/api/models` returns only configured model, not actual provider availability
+## 142. [✓] `page_num` / `page_number` / `page` are all simultaneously used
 
-It returns:
+Backend supports:
 
-```python
-[cfg.GROQ_MODEL]
+```text page_number
+page
 ```
 
-without checking if provider actually accepts that model.
+Frontend sometimes expects:
 
-So endpoint means:
+```text page_num
+```
 
-> configured model
+This caused the selected-evidence bug.
 
-not:
+Standardize on:
 
-> available model.
+```text page_number
+```
 
-Rename semantics accordingly.
+everywhere.
 
 ---
 
-# 84. [✓] `list_groq_models.py` lacks a timeout
+## 143. [✓] `doc_id`, `notice_id`, `filename`, `file_name` are all duplicated
 
-```python
-urllib.request.urlopen(req)
+Every retrieval result carries several aliases:
+
+```text doc_id
+notice_id
+filename
+file_name
 ```
 
-can hang.
+This makes contracts unnecessarily messy.
 
-Add:
+Standardize.
+
+---
+
+## 144. [✓] Hybrid result scores don't have a comparable semantic meaning across modes
+
+Text:
+
+```text RRF-like ~0.03
+```
+
+Visual:
+
+```text MaxSim ~16–20
+```
+
+Hybrid:
+
+```text ~0.09
+```
+
+These should never be directly displayed as though they are comparable confidence scores.
+
+---
+
+## 145. [✓] No explicit score normalization layer exists between retrieval systems
+
+This is especially relevant for future Hybrid improvements.
+
+RRF solves some score-scale problems, but the improved Hybrid is mixing transformed rank scores and raw visual scores without a formal calibration framework.
+
+---
+
+# 🟡 P. SCRATCH / AUXILIARY CODE
+
+I also checked `scratch/*.py`.
+
+These don't affect the normal application path, but they contain Python `SyntaxWarning`s such as:
+
+```text invalid escape sequence
+```
+
+from LaTeX-style strings like:
+
+```text \max
+\sum
+\text
+```
+
+This should be cleaned by using:
 
 ```python
-timeout=10
+r"""..."""
+```
+
+or escaping backslashes.
+
+They currently compile, so this is **not an application blocker**, but the auxiliary codebase isn't warning-free.
+
+---
+
+# ✅ WHAT IS ACTUALLY GOOD NOW
+
+I don't want this to sound like the whole project is broken.
+
+Several things from the previous iterations are now genuinely improved:
+
+```text
+✅ backend imports successfully
+✅ generation imports are fixed
+✅ app recognizes visual_reranked
+✅ app recognizes hybrid_reranked
+✅ vision alias is accepted
+✅ previous hybrid decay-argument crash is fixed
+✅ path portability is improved
+✅ Visual metadata can detect model mismatch
+✅ OCR keeps bounding boxes
+✅ combined metadata is rebuilt after OCR
+✅ text index validates entry/embedding count
+✅ frontend checks HTTP status for query/compare
+✅ frontend AbortController exists
+✅ visual generation no longer silently falls back to text-only generation
+```
+
+Those are real improvements.
+
+---
+
+# 🚨 THE 12 I WOULD FIX IMMEDIATELY
+
+Don't attempt to fix 145 things at once.
+
+These are the ones that can invalidate the project:
+
+### 1.
+
+**Delete/rebuild the current visual index**
+
+Current saved index:
+
+```text
+ColPali
+```
+
+Configured model:
+
+```text
+ColQwen2
 ```
 
 ---
 
-# 85. [✓] `profile_corpus.py` can abort an entire document profile if table detection breaks on one page
+### 2.
 
-The whole document is inside:
+**Delete `visual_embeddings.npy`**
 
-```python
-try:
-    with pdfplumber.open(...)
-```
-
-If:
-
-```python
-page.find_tables()
-```
-
-fails on one page, the entire document gets:
-
-```text processing_status = error
-```
-
-Better isolate page-level failures.
+No legacy fallback.
 
 ---
 
-# 86. [✓] `profile_corpus.py` detects scanned status using weak heuristics
+### 3.
 
-It says:
+**Fix `HybridRerankedRetriever` algorithm**
 
-```python
-if images > 0 and text < 20:
-    likely_scanned
+Especially:
+
+```text
+text-only candidates getting fake visual score
+visual rank being treated as visual evidence
+no actual visual reranking
 ```
-
-This is not necessarily wrong, but:
-
-```text embedded image
-```
-
-doesn't mean:
-
-```text scanned page
-```
-
-and scanned pages can have both image and extractable OCR/native text.
-
-Treat it as a heuristic classifier rather than factual document state.
 
 ---
 
-# 87. [✓] Table detection in `profile_corpus.py` only sees PDF-extractable tables
+### 4.
 
-This is important for your project.
+**Make Visual Reranked actually use genuine high-resolution PDF rendering**
 
-A scanned image may visibly contain:
+Not:
 
-```text table
+```text
+144 DPI PNG
+→ resize
 ```
 
 but:
 
-```python
-page.find_tables()
-```
-
-can return:
-
-```text 0
-```
-
-because there is no vector table structure.
-
-So:
-
-```text total_tables = 0
-```
-
-does not mean:
-
-> no visual table.
-
----
-
-# 88. [✓] `visual_complexity` is based on PDF line/rect counts
-
-```python
-len(lines) > 5 or len(rects) > 3
-```
-
-A scanned table may have:
-
-```text 0 PDF vector lines
-```
-
-yet be visually very structured.
-
-So this metric is really:
-
-> PDF vector-layout complexity
-
-not:
-
-> visual complexity.
-
----
-
-# 89. [✓] Frontend document cards are not guaranteed to match the corpus
-
-This is especially important now that you want future integration.
-
-The UI assumes:
-
-```text 7 documents
-25 pages
-```
-
-even when backend data could differ.
-
-For future expansion:
-
-```text hardcoded UI = bug factory
+```text
+original PDF
+→ 216 DPI render
 ```
 
 ---
 
-# 90. [✓] Frontend health fallback masks failures
+### 5.
 
-This:
+**Pass the actual high-resolution selected crop to the VLM**
 
-```javascript
-health?.total_pages || 25
+Not:
+
+```text reranker sees high-res
+generator sees low-res
 ```
-
-means backend offline can still display:
-
-```text 25 Pages
-```
-
-Likewise:
-
-```text 7 Documents
-```
-
-appears even if the backend returned nothing.
-
-That makes an offline/broken state look healthy.
 
 ---
 
-# 91. [✓] Header does not actually reflect backend health
+### 6.
 
-It shows:
+**Fix evaluation so the evaluated ranking is actually the ranking returned by the system**
 
-```text green dot
-GROQ Active
-ColQwen2 CUDA :0
+Especially:
+
+```text Visual Reranked
+Hybrid Reranked
 ```
 
-even when:
-
-```text API unavailable
-GPU unavailable
-visual index broken
-generation import broken
-```
-
-That's dangerous for debugging.
+They currently don't produce a complete 25-page ranking.
 
 ---
 
-# 92. [✓] App default and API default don't match
+### 7.
 
-Frontend:
+**Replace zero-score rejection with real answerability/abstention evaluation**
 
-```javascript
-const [mode, setMode] = useState('hybrid')
+Do not use:
+
+```text score <= 0
 ```
 
-Backend:
+as:
 
-```python
-mode: ModeLiteral = "hybrid_reranked"
-```
-
-So:
-
-```text browser default = Hybrid baseline
-API default = Hybrid reranked
-```
-
-Two users hitting the same conceptual screen can get different pipelines depending on how request is formed.
+> answer doesn't exist.
 
 ---
 
-# 93. [✓] Backend `hybrid_reranked` generation mode can be paired with baseline retrieval
+### 8.
 
-Because of bug #2.
-[✓] 
-[✓] So generator sees:
+**Separate retrieval evaluation and answer evaluation**
 
-```text mode = hybrid_reranked
+You already have:
+
+```text expected_answer
+acceptable_variants
 ```
 
-but retrieval result came from:
-
-```text HybridRetriever
-```
-
-That creates misleading generation method metadata.
+Use them.
 
 ---
 
-# 94. [✓] `/api/compare` doesn't use `hybrid_reranked`, despite backend having it
+### 9.
 
-That means your “compare” feature cannot answer:
+**Remove all fake frontend values**
 
-> Did the improved algorithm help?
+Especially:
 
-It only answers:
-
-> How do the baselines compare?
+```text 420ms
+10700ms
+10600ms
+79107ms
+300 DPI
+BGE
+Llama-3.3
+1.82 GB
+fake answer fallbacks
+fake score fallbacks
+```
 
 ---
 
-# 95. [✓] No automated test suite catches any of these
+### 10.
 
-There are effectively no unit/integration tests covering:
+**Make frontend corpus metadata come from `/api/documents`**
+
+Delete the hardcoded incorrect `CORPUS_DOCS` mapping.
+
+---
+
+### 11.
+
+**Rotate the exposed API key**
+
+This one is not optional.
+
+---
+
+### 12.
+
+**Add one real automated integration test**
+
+Something like:
 
 ```text
-mode routing
-index model compatibility
-generation imports
-Hybrid reranker
-API schema
-negative-query behavior
-frontend/backend contract
+fresh corpus
+→ load indexes
+→ query Q02
+→ expected page notice_2/p1
+→ verify Text
+→ verify Visual
+→ verify Hybrid
 ```
 
-The fact that I caught a runtime crash with a 5-line dummy test demonstrates why this matters.
+Then another:
+
+```text
+negative query
+→ actual API
+→ must abstain
+```
+
+That one test would have caught several regressions we've encountered.
 
 ---
 
-# 96. [✓] `requirements.txt` uses unbounded minimum versions
+# The most important overall conclusion
 
-Examples:
+The project is now **much closer**, but the biggest remaining problem is no longer “one obvious bug.”
 
-```text
-torch>=2.0.0
-transformers>=4.40.0
-fastapi>=0.100.0
-```
+It's **system consistency**.
 
-This means a fresh installation at a future date can pull versions with incompatible APIs.
-
-For a research repository, either:
+Right now you still have:
 
 ```text
-pin tested versions
-```
-
-or generate a tested lock file.
-
----
-
-# 97. [✓] Current project has no environment fingerprint in the saved benchmark
-
-A trustworthy benchmark should record:
-
-```text
-Python version
-PyTorch version
-Transformers version
-ColPali/ColQwen version
-model ID
-GPU
-CUDA
-corpus hash
-query-set hash
-```
-
-Current result artifact doesn't sufficiently bind itself to the exact environment.
-
----
-
-# 98. [✓] Current corpus/index artifacts are modified generated state inside Git working tree
-
-Git status shows many:
-
-```text
-data/processed/*
-data/embeddings/*
-data/evaluation/*
-```
-
-changes.
-
-That's not inherently wrong, but it means it is very easy to commit:
-
-```text stale index
-partial rebuild
-benchmark from different model
-```
-
-A better approach is to define clearly which derived artifacts are versioned and which are rebuilt.
-
----
-
-# 99. [✓] `scratch/` is now included
-
-There is:
-
-```text
-scratch/
-```
-
-with several generation scripts.
-
-That isn't inherently bad, but for a collaborative academic repo, scratch scripts can confuse:
-
-```text canonical implementation
-vs
-experimentation
-```
-
-Move experiments to:
-
-```text experiments/
-```
-
-or exclude them.
-
----
-
-# 100. [✓] The most dangerous overall issue: the repository currently contains multiple “truths”
-
-You have:
-
-```text config.py
-        ↓
-says ColQwen2
-
-visual index metadata
-        ↓
-says ColPali
-
-run_evaluation.py
-        ↓
-says visual_reranked
-
-saved results.json
-        ↓
-says visual_colpali_vlm
-
+RAW PDF
+   ↓
+processed text/image
+   ↓
+index
+   ↓
+retrieval
+   ↓
+reranker
+   ↓
+generation
+   ↓
 frontend
-        ↓
-says BGE
-says Llama-3.3
-says 300 DPI
-
-actual code
-        ↓
-MiniLM
-Qwen
-144/216 rendering
+   ↓
+evaluation
 ```
 
-This is the **main engineering debt**.
-
-The core algorithms are actually understandable.
-
-The bigger problem is that **different parts of the repository disagree about what the system is.**
-
----
-
-# WHAT I WOULD FIX FIRST
-
-Don't try to fix 100 things randomly.
-
-## 🔴 Phase 1 — BLOCKERS
-
-Do these before anything else:
+where several stages can still disagree about:
 
 ```text
-1. [✓] Fix generation.py undefined imports.
-
-2. [✓] Fix app.py mode routing:
-   visual_reranked → VisualReranker
-   hybrid_reranked → HybridRerankedRetriever
-
-3. [✓] Fix frontend:
-   vision → visual
-
-4. [✓] Fix HybridRerankedRetriever:
-   remove/fix decay argument bug.
-
-5. [✓] Delete old visual indices.
-
-6. [✓] Rebuild visual index using ONLY:
-   vidore/colqwen2-v1.0
-
-7. [✓] Add model/index compatibility validation.
-
-8. [✓] Delete legacy visual_embeddings.npy.
-
-9. [✓] Re-run evaluation from scratch.
-
-10. [✓] Remove/rotate the exposed API key.
+which model was used
+which evidence was used
+which score means what
+which page is selected
+which metadata is authoritative
+which pipeline is actually being evaluated
 ```
 
----
+The **single most dangerous inconsistency currently is the ColPali saved index vs ColQwen2 configured model**.
 
-# 🟠 PHASE 2 — MAKE THE VISUAL SYSTEM ACTUALLY GOOD
+The **single biggest algorithmic weakness is that “Hybrid Reranked” is still not a true multimodal reranker**.
 
-Then:
+The **single biggest UI/data problem is that the frontend hardcodes incorrect document metadata and fake telemetry**.
 
-```text
-11. [✓] Render candidate pages genuinely at higher DPI.
+The **single biggest security problem is the exposed API key**.
 
-12. [✓] Batch visual tile encoding.
+And the **single biggest evaluation problem is that the saved benchmark is not guaranteed to represent the current code/configuration**.
 
-13. [✓] Pass the actual selected high-resolution crop to generation.
-
-14. [✓] Make Visual Reranked actually use the visual reranker.
-
-15. [✓] Make Hybrid Reranked actually use real visual relevance,
-    not just visual rank transformations.
-
-16. [✓] Increase/measure candidate recall:
-    @5, @10, @15, @25.
-
-17. [✓] Add semantic evidence verification or a proper reranking model.
-
-18. [✓] Implement consistent abstention.
-```
-
----
-
-# 🟡 PHASE 3 — BENCHMARK CORRECTNESS
-
-Then:
-
-```text
-19. [✓] Make application and evaluator use the same candidate limits.
-
-20. [✓] Warm all relevant models before benchmark timing.
-
-21. [✓] [✓] Separate:
-    cold start
-    warm retrieval
-    reranking
-    generation
-    end-to-end
-
-22. [✓] [✓] Separate positive retrieval metrics from negative-query metrics.
-
-23. [✓] Implement actual answer evaluation.
-
-24. [✓] Implement actual abstention evaluation.
-
-25. [✓] Save model/index/corpus hashes with results.
-```
-
----
-
-# 🟢 PHASE 4 — FRONTEND / PACKAGING
-
-Then:
-
-```text
-26. [✓] Remove fake latency values.
-
-27. [✓] Remove hardcoded 25 pages / 7 documents.
-
-28. [✓] Use /api/documents dynamically.
-
-29. [✓] Fix selectedEvidence page_number/page_num.
-
-30. [✓] Remove hardcoded BGE/Llama/300 DPI claims.
-
-31. [✓] Make health badges reflect actual backend state.
-
-32. [✓] Add res.ok handling.
-
-33. [✓] Add request cancellation/race protection.
-
-34. [✓] Remove node_modules from repository/ZIP.
-
-35. [✓] Add missing Python dependencies.
-
-36. [✓] Pin tested Python dependency versions.
-```
-
----
-
-# THE MOST IMPORTANT FINDING ABOUT YOUR VISUAL SYSTEM
-
-This is the conclusion I want you to understand.
-
-Your problem is **not simply that ColQwen2 is bad**.
-
-The current repository has been in a state where:
-
-```text
-code says ColQwen2
-       ↓
-saved index = ColPali
-       ↓
-app doesn't actually call VisualReranker
-       ↓
-app doesn't actually call HybridRerankedRetriever
-       ↓
-HybridReranker itself crashes
-       ↓
-frontend visual mode sends wrong enum
-       ↓
-evaluation runs a different candidate protocol
-```
-
-So before judging:
-
-> “Is ColQwen2 good for our project?”
-
-we need to get to:
-
-```text
-ONE MODEL
-+
-ONE INDEX
-+
-ONE RETRIEVAL PIPELINE
-+
-ONE EVALUATION PROTOCOL
-+
-ONE FRONTEND CONTRACT
-```
-
-Then run the benchmark.
-
-Only **after that** should we decide whether the visual model/pipeline itself is good.
-
----
-
-# FINAL STATUS
-
-### The good news
-
-The project foundation is actually solid:
-
-```text
-PDF → page image
-PDF → native/OCR text
-       ↓
-Text retrieval
-       +
-Visual retrieval
-       +
-Hybrid retrieval
-       ↓
-source page
-       ↓
-multimodal generation
-```
-
-That architecture makes sense.
-
-### The bad news
-
-The current repository has **implementation drift**.
-
-It isn't one clean system anymore.
-
-It's more like:
-
-```text
-Version A:
-CLIP + Text + naive Hybrid
-
-Version B:
-ColPali
-
-Version C:
-ColQwen2
-
-Version D:
-Visual reranker
-
-Version E:
-Hybrid reranker
-
-```
-
-and pieces of all five are still present.
-
-That's why you're seeing confusing behavior.
-
-**I would not make any more model-level changes yet.**
-
-First make the repository internally consistent, especially the **six blockers at the top**. Then rebuild the visual index and rerun the benchmark. The resulting numbers will finally tell us whether the actual ColQwen2 + reranking architecture is good or whether we need another retrieval model.
-
-And bro—this audit found a **real runtime crash, a real API routing bug, a real frontend/backend enum bug, a real model/index mismatch, missing dependencies, stale benchmark artifacts, and a real exposed credential**. So there genuinely was still stuff to find; this isn't just cosmetic cleanup.
+I would **not call this final yet**. But unlike earlier versions, the remaining work is now very clearly identifiable and mostly concentrated in these consistency/evaluation/reranking layers.

@@ -3,83 +3,9 @@ import './index.css'
 
 const API_BASE = ''
 
-// Pre-defined metadata for the 7 indexed documents in the NIT Jamshedpur corpus
-const CORPUS_DOCS = [
-  {
-    id: "notice_1.pdf",
-    noticeId: "notice_1",
-    title: "Student Council Formation 2025-2027",
-    desc: "Executive nominations issued by Dean Student Welfare.",
-    pages: "1 page",
-    tag: "OCR 99.4%",
-    textType: "Full Text",
-    dpi: "300 DPI"
-  },
-  {
-    id: "notice_2.pdf",
-    noticeId: "notice_2",
-    title: "Official Office Bearers List with Signatures",
-    desc: "Tabular appointments countersigned by Registrar with stamp.",
-    pages: "1 page",
-    tag: "Table Detected",
-    textType: "Full Text",
-    dpi: "Visual Sig"
-  },
-  {
-    id: "notice_3.pdf",
-    noticeId: "notice_3",
-    title: "Fee Payment Deadlines & Surcharge Norms",
-    desc: "Semester 6 dues, late fine slabs, and SBI Collect instructions.",
-    pages: "1 page",
-    tag: "Key Deadlines",
-    textType: "Full Text",
-    dpi: "Fine Slabs"
-  },
-  {
-    id: "notice_4.pdf",
-    noticeId: "notice_4",
-    title: "Hostel Allocation List — Hall 4 & 7",
-    desc: "Room allotment for pre-final year engineering candidates.",
-    pages: "1 page",
-    tag: "B.Tech Sem 5",
-    textType: "Full Text",
-    dpi: "Hall 4 & 7"
-  },
-  {
-    id: "notice_5.pdf",
-    noticeId: "notice_5",
-    title: "Academic Regulations & Ordinance",
-    desc: "Comprehensive B.Tech curriculum ordinance and credit rules.",
-    pages: "16 pages",
-    tag: "Ordinance",
-    textType: "Full Text",
-    dpi: "Multi-page"
-  },
-  {
-    id: "notice_6.pdf",
-    noticeId: "notice_6",
-    title: "Dean Academic Circular on Mid-Semester",
-    desc: "Seating plan, attendance thresholds, and exam clash timings.",
-    pages: "1 page",
-    tag: "Exam Affairs",
-    textType: "Full Text",
-    dpi: "Mid-Sem 2025"
-  },
-  {
-    id: "notice_7.pdf",
-    noticeId: "notice_7",
-    title: "JRF & Research Scholar Fellowship Revision",
-    desc: "Ministry of Education revised stipend matrix and HRA slabs.",
-    pages: "4 pages",
-    tag: "MoE Matrix",
-    textType: "Full Text",
-    dpi: "4 Pages"
-  }
-]
-
 export default function App() {
   const [question, setQuestion] = useState('')
-  const [mode, setMode] = useState('hybrid') // 'text' | 'vision' | 'hybrid'
+  const [mode, setMode] = useState('hybrid_reranked') // 'text' | 'vision' | 'hybrid' | 'visual_reranked' | 'hybrid_reranked'
   const [result, setResult] = useState(null)
   const [comparison, setComparison] = useState(null)
   const [loading, setLoading] = useState(false)
@@ -97,18 +23,19 @@ export default function App() {
   // Modals & Toasts
   const [docModal, setDocModal] = useState(null)
   const [toastMessage, setToastMessage] = useState('')
+  const toastTimeoutRef = useRef(null)
   
   const searchInputRef = useRef(null)
 
   useEffect(() => {
     fetch(`${API_BASE}/api/health`)
-      .then(r => r.json())
-      .then(setHealth)
-      .catch(() => setHealth({ status: 'offline', text_index_loaded: false, total_pages: 0 }))
+      .then(r => r.ok ? r.json() : null)
+      .then(d => d && setHealth(d))
+      .catch(() => setHealth({ status: 'offline', text_index_loaded: false, visual_index_loaded: false, total_pages: 0 }))
 
     fetch(`${API_BASE}/api/documents`)
-      .then(r => r.json())
-      .then(d => setDocuments(d.documents || []))
+      .then(r => r.ok ? r.json() : null)
+      .then(d => d && setDocuments(d.documents || []))
       .catch(() => {})
 
     const savedKey = localStorage.getItem('llm_api_key')
@@ -118,8 +45,10 @@ export default function App() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ provider: savedProvider, api_key: savedKey })
-      }).then(r => r.json()).then(() => {
-        fetch(`${API_BASE}/api/health`).then(r => r.json()).then(setHealth)
+      }).then(r => {
+        if (r.ok) {
+          fetch(`${API_BASE}/api/health`).then(hr => hr.ok ? hr.json() : null).then(hd => hd && setHealth(hd)).catch(() => {})
+        }
       }).catch(() => {})
     }
   }, [])
@@ -143,8 +72,9 @@ export default function App() {
   }, [])
 
   const triggerToast = (msg) => {
+    if (toastTimeoutRef.current) clearTimeout(toastTimeoutRef.current)
     setToastMessage(msg)
-    setTimeout(() => {
+    toastTimeoutRef.current = setTimeout(() => {
       setToastMessage('')
     }, 2800)
   }
@@ -207,7 +137,7 @@ export default function App() {
     const q = queryText.trim()
     if (!q) {
       if (searchInputRef.current) searchInputRef.current.focus()
-      triggerToast('Please enter a query to run Tri-Modal Comparison')
+      triggerToast('Please enter a query to run Multi-Mode Comparison')
       return
     }
 
@@ -240,7 +170,7 @@ export default function App() {
 
       const data = await res.json()
       setComparison(data)
-      triggerToast(`Tri-Modal Benchmark finished in ${data.total_time_ms ? data.total_time_ms + 'ms' : 'completed'}`)
+      triggerToast(`Multi-Mode Benchmark finished in ${data.total_time_ms ? data.total_time_ms + 'ms' : 'completed'}`)
     } catch (e) {
       if (e.name === 'AbortError') return
       setComparison({ error: e.message })
@@ -272,7 +202,7 @@ export default function App() {
         localStorage.setItem('llm_provider', apiProvider)
         setApiKeySaved(true)
         setApiKeyEditing(false)
-        const h = await fetch(`${API_BASE}/api/health`).then(r => r.json()).catch(() => null)
+        const h = await fetch(`${API_BASE}/api/health`).then(r => r.ok ? r.json() : null).catch(() => null)
         if (h) setHealth(h)
         triggerToast(`${apiProvider.toUpperCase()} API key saved!`)
       }
@@ -289,7 +219,7 @@ export default function App() {
         <div className="absolute inset-0 bg-[radial-gradient(ellipse_80%_60%_at_50%_-10%,rgba(160,120,255,0.12),rgba(15,19,28,0))]"></div>
       </div>
 
-      {/* SINGLE SLEEK FULL-WIDTH COMPACT HEADER (h-14 / 56px height) */}
+      {/* SINGLE SLEEK FULL-WIDTH COMPACT HEADER */}
       <header className="fixed top-0 left-0 right-0 z-50 bg-surface-container-lowest/90 backdrop-blur-xl border-b border-outline-variant/20 shadow-md">
         <div className="h-14 w-full px-4 sm:px-8 flex items-center justify-between gap-4">
           
@@ -311,19 +241,19 @@ export default function App() {
             </div>
           </div>
 
-          {/* Center Badges & Status */}
+          {/* Center Badges & Dynamic Status */}
           <div className="hidden md:flex items-center gap-2 text-xs">
             <div className="flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-surface-container-low border border-outline-variant/20">
-              <span className="w-1.5 h-1.5 rounded-full bg-tertiary pulse-dot-green"></span>
-              <span className="text-tertiary font-medium">{health?.total_pages || 25} Pages</span>
+              <span className={`w-1.5 h-1.5 rounded-full ${health?.status === 'ok' ? 'bg-tertiary pulse-dot-green' : 'bg-amber-500'}`}></span>
+              <span className="text-tertiary font-medium">{health?.total_pages != null ? `${health.total_pages} Pages` : 'Index Offline'}</span>
             </div>
             <div className="flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-surface-container-low border border-outline-variant/20">
-              <div className="w-1.5 h-1.5 rounded-full bg-primary animate-pulse"></div>
-              <span className="text-primary font-medium">GROQ Active</span>
+              <div className={`w-1.5 h-1.5 rounded-full ${health?.status === 'ok' ? 'bg-primary animate-pulse' : 'bg-outline'}`}></div>
+              <span className="text-primary font-medium">{health?.configured_model ? `Groq: ${health.configured_model}` : 'Groq Ready'}</span>
             </div>
             <div className="flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-surface-container-low border border-outline-variant/20">
-              <div className="w-1.5 h-1.5 rounded-full bg-secondary"></div>
-              <span className="text-secondary font-medium">ColQwen2 CUDA :0</span>
+              <div className={`w-1.5 h-1.5 rounded-full ${health?.visual_index_loaded ? 'bg-secondary' : 'bg-outline'}`}></div>
+              <span className="text-secondary font-medium">{health?.visual_index_loaded ? 'ColQwen2 VLM Active' : 'Visual Offline'}</span>
             </div>
           </div>
 
@@ -366,13 +296,11 @@ export default function App() {
         </div>
       </header>
 
-      {/* MAIN WORKSPACE AREA (pt-20 gives clean compact top spacing) */}
+      {/* MAIN WORKSPACE AREA */}
       <main className="w-full pt-20 pb-10 relative z-10 min-h-screen flex flex-col justify-between">
         <div className="w-full max-w-6xl mx-auto px-4 sm:px-6">
           
-          {/* ========================================================= */}
-          {/* STATE 2: LOADING / RADAR SCANNER                          */}
-          {/* ========================================================= */}
+          {/* LOADING / SCANNING STATE */}
           {loading ? (
             <div className="py-4 space-y-4 animate-fade-in-up">
               <section className="w-full rounded-xl bg-surface-container/70 border border-outline-variant/30 backdrop-blur-xl p-4 space-y-3">
@@ -410,7 +338,7 @@ export default function App() {
                     </h2>
                   </div>
                   <p className="max-w-md text-xs text-on-surface-variant">
-                    Evaluating tri-modal RAG retrieval across text tokens and multi-vector document image patches indexed from NIT Jamshedpur Corpus.
+                    Evaluating tri-mode RAG retrieval across text tokens and multi-vector document image patches indexed from NIT Jamshedpur Corpus.
                   </p>
                 </div>
 
@@ -421,7 +349,7 @@ export default function App() {
                       <span className="material-symbols-outlined text-tertiary text-[16px]">check_circle</span>
                     </div>
                     <h3 className="text-sm text-on-surface font-bold">Text Chunking</h3>
-                    <p className="text-xs text-on-surface-variant mt-0.5">BM25 + BGE dense vector search.</p>
+                    <p className="text-xs text-on-surface-variant mt-0.5">BM25 + all-MiniLM-L6-v2 dense vector search.</p>
                   </div>
                   <div className={`flex flex-col rounded-lg p-3 border transition-all ${loadingStep >= 2 ? 'bg-surface-container/90 border-primary/40' : 'bg-surface-container/40 border-outline-variant/20'}`}>
                     <div className="flex items-center justify-between mb-1">
@@ -440,16 +368,14 @@ export default function App() {
                         {loadingStep >= 3 ? 'auto_awesome' : 'schedule'}
                       </span>
                     </div>
-                    <h3 className="text-sm text-on-surface font-bold">Groq Llama-3.3 Synthesis</h3>
-                    <p className="text-xs text-on-surface-variant mt-0.5">Grounded answer generation.</p>
+                    <h3 className="text-sm text-on-surface font-bold">Groq Answer Synthesis</h3>
+                    <p className="text-xs text-on-surface-variant mt-0.5">Grounded answer generation via {health?.configured_model || 'Groq Qwen'}.</p>
                   </div>
                 </div>
               </div>
             </div>
           ) : comparison ? (
-            /* ========================================================= */
-            /* STATE 3: TRI-MODAL COMPARISON RESULTS VIEW               */
-            /* ========================================================= */
+            /* MULTI-MODE COMPARISON RESULTS VIEW */
             <div className="py-4 space-y-4 animate-fade-in-up">
               {/* Header Controller Bar */}
               <div className="p-3 rounded-xl bg-surface-container-low/90 border border-outline-variant/30 shadow-md backdrop-blur-md">
@@ -489,28 +415,30 @@ export default function App() {
                   </div>
                   <div className="min-w-0">
                     <div className="flex items-center gap-2">
-                      <h1 className="text-sm text-on-surface font-bold tracking-tight shrink-0">Side-by-Side Tri-Modal Evaluation</h1>
-                      <span className="text-outline text-xs">—</span>
+                      <h1 className="text-sm text-on-surface font-bold tracking-tight shrink-0">Multi-Mode Retrieval Evaluation</h1>
+                      <span className="text-outline text-xs">•</span>
                       <span className="text-xs text-secondary font-medium truncate max-w-xs sm:max-w-md">"{comparison.question}"</span>
                     </div>
                   </div>
                 </div>
-                <div className="flex items-center gap-2 shrink-0 text-xs">
-                  <div className="px-2.5 py-0.5 rounded-md bg-surface-container-low border border-outline-variant/30 flex items-center gap-1.5">
-                    <span className="w-1.5 h-1.5 rounded-full bg-tertiary"></span>
-                    <span className="text-outline">Total Latency:</span>
-                    <span className="text-primary font-bold">{comparison.total_time_ms ? `${comparison.total_time_ms}ms` : '79,107ms'}</span>
+                {comparison.total_time_ms != null && (
+                  <div className="flex items-center gap-2 shrink-0 text-xs">
+                    <div className="px-2.5 py-0.5 rounded-md bg-surface-container-low border border-outline-variant/30 flex items-center gap-1.5">
+                      <span className="w-1.5 h-1.5 rounded-full bg-tertiary"></span>
+                      <span className="text-outline">Total Latency:</span>
+                      <span className="text-primary font-bold">{comparison.total_time_ms}ms</span>
+                    </div>
                   </div>
-                </div>
+                )}
               </div>
 
-              {/* 3-Column Evaluation Grid */}
+              {/* Multi-Column Evaluation Grid */}
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 {/* COLUMN 1: TEXT BASELINE */}
                 {(() => {
                   const modeData = comparison.modes?.text_baseline || comparison.modes?.text || {}
                   const topPage = modeData.retrieved_pages?.[0]
-                  const modeTotalMs = modeData.total_time_ms ? modeData.total_time_ms.toFixed(2) : (modeData.retrieval_time_ms ? (modeData.retrieval_time_ms + (modeData.generation_time_ms || 10700)).toFixed(2) : '10782.40')
+                  const modeTotalMs = modeData.retrieval_time_ms != null && modeData.generation_time_ms != null ? (modeData.retrieval_time_ms + modeData.generation_time_ms).toFixed(1) : null
                   return (
                     <div className="flex flex-col bg-surface-container-low/95 rounded-xl border border-outline-variant/30 shadow-md overflow-hidden">
                       <div className="h-1 w-full bg-tertiary"></div>
@@ -521,16 +449,16 @@ export default function App() {
                               <span className="w-2 h-2 rounded-full bg-tertiary"></span>
                               <span className="text-sm text-on-surface font-bold">Text Baseline</span>
                             </div>
-                            <div className="flex flex-col items-end">
-                              <span className="px-1.5 py-0.5 rounded bg-tertiary-container/30 text-tertiary text-[10px] font-bold">
-                                {modeTotalMs}ms
-                              </span>
-                              {modeData.retrieval_time_ms && (
+                            {modeTotalMs != null && (
+                              <div className="flex flex-col items-end">
+                                <span className="px-1.5 py-0.5 rounded bg-tertiary-container/30 text-tertiary text-[10px] font-bold">
+                                  {modeTotalMs}ms
+                                </span>
                                 <span className="text-[9px] text-outline mt-0.5 font-mono">Retr: {modeData.retrieval_time_ms}ms</span>
-                              )}
-                            </div>
+                              </div>
+                            )}
                           </div>
-                          <p className="text-xs text-outline">BM25 + BGE dense vector search.</p>
+                          <p className="text-xs text-outline">BM25 + all-MiniLM-L6-v2 vector search.</p>
                         </div>
                         
                         <div className="p-2.5 rounded-lg bg-surface-container border border-outline-variant/20 space-y-0.5">
@@ -539,32 +467,34 @@ export default function App() {
                             <span className="text-tertiary">Text Match</span>
                           </div>
                           <div className="text-xs text-on-surface leading-relaxed">
-                            {modeData.answer || "Extracted textual contents from administrative circular."}
+                            {modeData.answer || "No text answer returned."}
                           </div>
                         </div>
 
-                        <div className="px-2.5 py-1 rounded-lg bg-surface-container-highest border border-outline-variant/20 flex items-center justify-between text-xs">
-                          <span className="text-[10px] text-outline">PRIMARY SOURCE:</span>
-                          <span className="text-on-surface font-semibold truncate">
-                            {topPage ? `${topPage.doc_id} p.${topPage.page_num || topPage.page_number || 1}` : 'notice_1.pdf p.1'}
-                          </span>
-                        </div>
+                        {topPage && (
+                          <div className="px-2.5 py-1 rounded-lg bg-surface-container-highest border border-outline-variant/20 flex items-center justify-between text-xs">
+                            <span className="text-[10px] text-outline">PRIMARY SOURCE:</span>
+                            <span className="text-on-surface font-semibold truncate">
+                              {topPage.notice_id} p.{topPage.page_number || topPage.page || 1}
+                            </span>
+                          </div>
+                        )}
 
                         <div className="space-y-1 text-xs">
                           <span className="text-[10px] uppercase text-outline">Top Evidence</span>
-                          {modeData.retrieved_pages?.slice(0, 3).map((page, idx) => (
-                            <div key={idx} className="p-1.5 rounded-lg bg-surface-container border border-outline-variant/10 flex items-center justify-between">
-                              <span className="text-tertiary font-bold truncate">#{idx + 1} {page.doc_id} p.{page.page_num || page.page_number || 1}</span>
-                              <span className="text-outline text-[10px] shrink-0 ml-1">Score: {(page.hybrid_score || page.score || 0.032).toFixed(4)}</span>
+                          {modeData.retrieved_pages?.slice(0, 3).map((page) => (
+                            <div key={`${page.notice_id}_p${page.page_number || page.page || 1}`} className="p-1.5 rounded-lg bg-surface-container border border-outline-variant/10 flex items-center justify-between">
+                              <span className="text-tertiary font-bold truncate">#{page.page_number || page.page || 1} {page.notice_id}</span>
+                              <span className="text-outline text-[10px] shrink-0 ml-1">Score: {page.score != null ? Number(page.score).toFixed(4) : '-'}</span>
                             </div>
                           ))}
                         </div>
 
                         <div className="relative w-full aspect-[4/3] rounded-lg overflow-hidden bg-surface-container-lowest border border-outline-variant/20 flex items-center justify-center">
                           {topPage?.image_url ? (
-                            <img src={topPage.image_url} alt="Text Evidence" className="w-full h-full object-contain" />
+                            <img src={topPage.image_url} alt="Text Evidence" className="w-full h-full object-contain" onError={(e) => { e.target.style.display = 'none' }} />
                           ) : (
-                            <div className="p-2 text-center text-xs text-outline">notice_1.pdf Facsimile</div>
+                            <div className="p-2 text-center text-xs text-outline">{topPage ? `${topPage.notice_id} p.${topPage.page_number || 1}` : 'No Image'}</div>
                           )}
                         </div>
                       </div>
@@ -576,7 +506,7 @@ export default function App() {
                 {(() => {
                   const modeData = comparison.modes?.visual || comparison.modes?.visual_vlm || {}
                   const topPage = modeData.retrieved_pages?.[0]
-                  const modeTotalMs = modeData.total_time_ms ? modeData.total_time_ms.toFixed(2) : (modeData.retrieval_time_ms ? (modeData.retrieval_time_ms + (modeData.generation_time_ms || 10600)).toFixed(2) : '10714.20')
+                  const modeTotalMs = modeData.retrieval_time_ms != null && modeData.generation_time_ms != null ? (modeData.retrieval_time_ms + modeData.generation_time_ms).toFixed(1) : null
                   return (
                     <div className="flex flex-col bg-surface-container-low/95 rounded-xl border border-primary/40 shadow-md overflow-hidden">
                       <div className="h-1 w-full bg-primary-container"></div>
@@ -587,16 +517,16 @@ export default function App() {
                               <span className="w-2 h-2 rounded-full bg-primary animate-pulse"></span>
                               <span className="text-sm text-on-surface font-bold">Visual VLM (ColQwen2)</span>
                             </div>
-                            <div className="flex flex-col items-end">
-                              <span className="px-1.5 py-0.5 rounded bg-primary-container text-on-primary-container text-[10px] font-bold">
-                                {modeTotalMs}ms
-                              </span>
-                              {modeData.retrieval_time_ms && (
+                            {modeTotalMs != null && (
+                              <div className="flex flex-col items-end">
+                                <span className="px-1.5 py-0.5 rounded bg-primary-container text-on-primary-container text-[10px] font-bold">
+                                  {modeTotalMs}ms
+                                </span>
                                 <span className="text-[9px] text-outline mt-0.5 font-mono">Retr: {modeData.retrieval_time_ms}ms</span>
-                              )}
-                            </div>
+                              </div>
+                            )}
                           </div>
-                          <p className="text-xs text-outline">Multi-vector vision embeddings over raw scans.</p>
+                          <p className="text-xs text-outline">Multi-vector vision embeddings over raw page images.</p>
                         </div>
 
                         <div className="p-2.5 rounded-lg bg-surface-container border border-primary/30 space-y-0.5">
@@ -605,23 +535,25 @@ export default function App() {
                             <span className="text-primary">Visual Grounding</span>
                           </div>
                           <div className="text-xs text-on-surface leading-relaxed">
-                            {modeData.answer || "Resolved rubber-stamp ink signature & tabular list."}
+                            {modeData.answer || "No visual answer returned."}
                           </div>
                         </div>
 
-                        <div className="px-2.5 py-1 rounded-lg bg-surface-container-highest border border-primary/30 flex items-center justify-between text-xs">
-                          <span className="text-[10px] text-outline">TARGET NOTICE:</span>
-                          <span className="text-primary font-semibold truncate">
-                            {topPage ? `${topPage.doc_id} p.${topPage.page_num || topPage.page_number || 1}` : 'notice_2.pdf p.1'}
-                          </span>
-                        </div>
+                        {topPage && (
+                          <div className="px-2.5 py-1 rounded-lg bg-surface-container-highest border border-primary/30 flex items-center justify-between text-xs">
+                            <span className="text-[10px] text-outline">TARGET NOTICE:</span>
+                            <span className="text-primary font-semibold truncate">
+                              {topPage.notice_id} p.{topPage.page_number || topPage.page || 1}
+                            </span>
+                          </div>
+                        )}
 
                         <div className="space-y-1 text-xs">
                           <span className="text-[10px] uppercase text-outline">MaxSim Visual Alignment</span>
-                          {modeData.retrieved_pages?.slice(0, 3).map((page, idx) => (
-                            <div key={idx} className="p-1.5 rounded-lg bg-surface-container border border-primary/30 flex items-center justify-between">
-                              <span className="text-primary font-bold truncate">#{idx + 1} {page.doc_id} p.{page.page_num || page.page_number || 1}</span>
-                              <span className="text-primary font-bold text-[10px] shrink-0 ml-1">{(page.hybrid_score || page.score || 12.54).toFixed(4)}</span>
+                          {modeData.retrieved_pages?.slice(0, 3).map((page) => (
+                            <div key={`${page.notice_id}_p${page.page_number || page.page || 1}`} className="p-1.5 rounded-lg bg-surface-container border border-primary/30 flex items-center justify-between">
+                              <span className="text-primary font-bold truncate">#{page.page_number || page.page || 1} {page.notice_id}</span>
+                              <span className="text-primary font-bold text-[10px] shrink-0 ml-1">{page.score != null ? Number(page.score).toFixed(4) : '-'}</span>
                             </div>
                           ))}
                         </div>
@@ -629,9 +561,9 @@ export default function App() {
                         <div className="relative w-full aspect-[4/3] rounded-lg overflow-hidden bg-surface-container-lowest border border-primary/30 flex items-center justify-center">
                           <div className="laser-scan text-primary pointer-events-none z-20"></div>
                           {topPage?.image_url ? (
-                            <img src={topPage.image_url} alt="Visual Evidence" className="w-full h-full object-contain" />
+                            <img src={topPage.image_url} alt="Visual Evidence" className="w-full h-full object-contain" onError={(e) => { e.target.style.display = 'none' }} />
                           ) : (
-                            <div className="p-2 text-center text-xs text-primary">notice_2.pdf Facsimile</div>
+                            <div className="p-2 text-center text-xs text-primary">{topPage ? `${topPage.notice_id} p.${topPage.page_number || 1}` : 'No Image'}</div>
                           )}
                         </div>
                       </div>
@@ -639,11 +571,11 @@ export default function App() {
                   )
                 })()}
 
-                {/* COLUMN 3: HYBRID RAG (70/30) */}
+                {/* COLUMN 3: HYBRID RERANKED */}
                 {(() => {
-                  const modeData = comparison.modes?.hybrid_rrf_baseline || comparison.modes?.hybrid || {}
+                  const modeData = comparison.modes?.hybrid_reranked || comparison.modes?.hybrid_rrf_baseline || comparison.modes?.hybrid || {}
                   const topPage = modeData.retrieved_pages?.[0]
-                  const modeTotalMs = modeData.total_time_ms ? modeData.total_time_ms.toFixed(2) : (modeData.retrieval_time_ms ? (modeData.retrieval_time_ms + (modeData.generation_time_ms || 10600)).toFixed(2) : '10899.10')
+                  const modeTotalMs = modeData.retrieval_time_ms != null && modeData.generation_time_ms != null ? (modeData.retrieval_time_ms + modeData.generation_time_ms).toFixed(1) : null
                   return (
                     <div className="flex flex-col bg-surface-container-low/95 rounded-xl border border-outline-variant/30 shadow-md overflow-hidden">
                       <div className="h-1 w-full bg-secondary"></div>
@@ -652,18 +584,18 @@ export default function App() {
                           <div className="flex items-center justify-between">
                             <div className="flex items-center gap-1.5">
                               <span className="w-2 h-2 rounded-full bg-secondary"></span>
-                              <span className="text-sm text-on-surface font-bold">Hybrid RAG (70/30)</span>
+                              <span className="text-sm text-on-surface font-bold">Hybrid Reranked RAG</span>
                             </div>
-                            <div className="flex flex-col items-end">
-                              <span className="px-1.5 py-0.5 rounded bg-secondary-container/40 text-secondary text-[10px] font-bold">
-                                {modeTotalMs}ms
-                              </span>
-                              {modeData.retrieval_time_ms && (
+                            {modeTotalMs != null && (
+                              <div className="flex flex-col items-end">
+                                <span className="px-1.5 py-0.5 rounded bg-secondary-container/40 text-secondary text-[10px] font-bold">
+                                  {modeTotalMs}ms
+                                </span>
                                 <span className="text-[9px] text-outline mt-0.5 font-mono">Retr: {modeData.retrieval_time_ms}ms</span>
-                              )}
-                            </div>
+                              </div>
+                            )}
                           </div>
-                          <p className="text-xs text-outline">70% ColQwen2 Visual + 30% BGE Text RRF.</p>
+                          <p className="text-xs text-outline">Candidate union RRF + 216 DPI multi-scale visual reranking.</p>
                         </div>
 
                         <div className="p-2.5 rounded-lg bg-surface-container border border-secondary/25 space-y-0.5">
@@ -672,23 +604,25 @@ export default function App() {
                             <span className="text-secondary">Verified Consensus</span>
                           </div>
                           <div className="text-xs text-on-surface leading-relaxed">
-                            {modeData.answer || "Consensus derived across visual layout semantics corroborated with text keywords."}
+                            {modeData.answer || "No hybrid answer returned."}
                           </div>
                         </div>
 
-                        <div className="px-2.5 py-1 rounded-lg bg-surface-container-highest border border-secondary/25 flex items-center justify-between text-xs">
-                          <span className="text-[10px] text-outline">PRIMARY RETRIEVAL:</span>
-                          <span className="text-secondary font-semibold truncate">
-                            {topPage ? `${topPage.doc_id} p.${topPage.page_num || topPage.page_number || 1}` : 'notice_2.pdf p.1'}
-                          </span>
-                        </div>
+                        {topPage && (
+                          <div className="px-2.5 py-1 rounded-lg bg-surface-container-highest border border-secondary/25 flex items-center justify-between text-xs">
+                            <span className="text-[10px] text-outline">PRIMARY RETRIEVAL:</span>
+                            <span className="text-secondary font-semibold truncate">
+                              {topPage.notice_id} p.{topPage.page_number || topPage.page || 1}
+                            </span>
+                          </div>
+                        )}
 
                         <div className="space-y-1 text-xs">
-                          <span className="text-[10px] uppercase text-outline">Reciprocal Rank Fusion</span>
-                          {modeData.retrieved_pages?.slice(0, 3).map((page, idx) => (
-                            <div key={idx} className="p-1.5 rounded-lg bg-surface-container border border-secondary/30 flex items-center justify-between">
-                              <span className="text-secondary font-bold truncate">#{idx + 1} {page.doc_id} p.{page.page_num || page.page_number || 1}</span>
-                              <span className="text-secondary font-bold text-[10px] shrink-0 ml-1">{(page.hybrid_score || page.score || 0.0162).toFixed(4)}</span>
+                          <span className="text-[10px] uppercase text-outline">Candidate Fusion</span>
+                          {modeData.retrieved_pages?.slice(0, 3).map((page) => (
+                            <div key={`${page.notice_id}_p${page.page_number || page.page || 1}`} className="p-1.5 rounded-lg bg-surface-container border border-secondary/30 flex items-center justify-between">
+                              <span className="text-secondary font-bold truncate">#{page.page_number || page.page || 1} {page.notice_id}</span>
+                              <span className="text-secondary font-bold text-[10px] shrink-0 ml-1">{page.score != null ? Number(page.score).toFixed(4) : '-'}</span>
                             </div>
                           ))}
                         </div>
@@ -696,9 +630,9 @@ export default function App() {
                         <div className="relative w-full aspect-[4/3] rounded-lg overflow-hidden bg-surface-container-lowest border border-secondary/30 flex items-center justify-center">
                           <div className="laser-scan text-secondary pointer-events-none z-20"></div>
                           {topPage?.image_url ? (
-                            <img src={topPage.image_url} alt="Hybrid Evidence" className="w-full h-full object-contain" />
+                            <img src={topPage.image_url} alt="Hybrid Evidence" className="w-full h-full object-contain" onError={(e) => { e.target.style.display = 'none' }} />
                           ) : (
-                            <div className="p-2 text-center text-xs text-secondary">notice_2.pdf Facsimile</div>
+                            <div className="p-2 text-center text-xs text-secondary">{topPage ? `${topPage.notice_id} p.${topPage.page_number || 1}` : 'No Image'}</div>
                           )}
                         </div>
                       </div>
@@ -712,15 +646,13 @@ export default function App() {
                 <div className="flex items-center gap-2">
                   <span className="material-symbols-outlined text-[18px] text-primary shrink-0">insights</span>
                   <p className="text-on-surface-variant">
-                    The <strong className="text-tertiary font-medium">Text Baseline</strong> relies on keywords. The <strong className="text-primary font-medium">Visual VLM (ColQwen2)</strong> and <strong className="text-secondary font-medium">Hybrid RAG</strong> inspect spatial layout, stamps, and signature blocks without OCR loss.
+                    The <strong className="text-tertiary font-medium">Text Baseline</strong> relies on keywords. The <strong className="text-primary font-medium">Visual VLM (ColQwen2)</strong> and <strong className="text-secondary font-medium">Hybrid Reranked RAG</strong> inspect spatial layout, stamps, and signature blocks.
                   </p>
                 </div>
               </div>
             </div>
           ) : result ? (
-            /* ========================================================= */
-            /* SINGLE MODE SEARCH RESULT VIEW                            */
-            /* ========================================================= */
+            /* SINGLE MODE SEARCH RESULT VIEW */
             <div className="w-full max-w-4xl mx-auto space-y-3 animate-fade-in-up">
               <div className="p-4 rounded-xl bg-surface-container/80 border border-primary/30 shadow-lg space-y-3">
                 <div className="flex items-center justify-between pb-2 border-b border-outline-variant/20">
@@ -741,32 +673,33 @@ export default function App() {
                 <div className="space-y-1.5">
                   <div className="text-[10px] text-outline uppercase">Retrieved Evidence Pages</div>
                   <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
-                    {result.retrieved_pages?.map((page, idx) => (
-                      <div 
-                        key={idx} 
-                        className={`p-2.5 rounded-lg border transition-all cursor-pointer ${selectedEvidence?.doc_id === page.doc_id && selectedEvidence?.page_num === page.page_num ? 'bg-surface-container-high border-primary shadow-sm' : 'bg-surface-container-low border-outline-variant/20 hover:border-primary/50'}`}
-                        onClick={() => setSelectedEvidence(page)}
-                      >
-                        <div className="flex items-center justify-between text-xs mb-1.5">
-                          <span className="text-primary font-bold">#{idx + 1} {page.doc_id} p.{page.page_num || page.page_number || 1}</span>
-                          <span className="text-outline text-[10px]">{(page.hybrid_score || page.score || 0).toFixed(4)}</span>
+                    {result.retrieved_pages?.map((page) => {
+                      const isSelected = selectedEvidence?.notice_id === page.notice_id && selectedEvidence?.page_number === (page.page_number || page.page)
+                      return (
+                        <div 
+                          key={`${page.notice_id}_p${page.page_number || page.page || 1}`} 
+                          className={`p-2.5 rounded-lg border transition-all cursor-pointer ${isSelected ? 'bg-surface-container-high border-primary shadow-sm' : 'bg-surface-container-low border-outline-variant/20 hover:border-primary/50'}`}
+                          onClick={() => setSelectedEvidence(page)}
+                        >
+                          <div className="flex items-center justify-between text-xs mb-1.5">
+                            <span className="text-primary font-bold">{page.notice_id} p.{page.page_number || page.page || 1}</span>
+                            <span className="text-outline text-[10px]">{page.score != null ? Number(page.score).toFixed(4) : '-'}</span>
+                          </div>
+                          {page.image_url && (
+                            <img src={page.image_url} alt="Evidence" className="w-full h-28 object-contain rounded bg-surface-container-lowest" onError={(e) => { e.target.style.display = 'none' }} />
+                          )}
                         </div>
-                        {page.image_url && (
-                          <img src={page.image_url} alt="Evidence" className="w-full h-28 object-contain rounded bg-surface-container-lowest" />
-                        )}
-                      </div>
-                    ))}
+                      )
+                    })}
                   </div>
                 </div>
               </div>
             </div>
           ) : (
-            /* ========================================================= */
-            /* STATE 1: LANDING & SEARCH CONSOLE (COMPACT & ELEGANT)     */
-            /* ========================================================= */
+            /* LANDING & SEARCH CONSOLE */
             <div className="w-full flex flex-col gap-5">
               
-              {/* COMPACT SLEEK COMMAND SEARCH CONSOLE */}
+              {/* SEARCH CONSOLE */}
               <section className="relative w-full max-w-4xl mx-auto stagger-1">
                 <div className="relative w-full rounded-xl bg-surface-container/60 border border-outline-variant/20 backdrop-blur-xl shadow-md p-3 sm:p-3.5 space-y-2.5">
                   <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 w-full">
@@ -775,7 +708,7 @@ export default function App() {
                       <input 
                         ref={searchInputRef}
                         className="w-full bg-transparent text-xs sm:text-sm text-on-surface placeholder:text-outline/60 focus:outline-none"
-                        placeholder="Ask a question about NIT Jamshedpur notices, academic council, fee deadlines..."
+                        placeholder="Ask a question about NIT Jamshedpur notices, fee deadlines, academic circulars..."
                         value={question}
                         onChange={e => setQuestion(e.target.value)}
                         onKeyDown={e => e.key === 'Enter' && handleQuery()}
@@ -821,18 +754,18 @@ export default function App() {
                         <span>Text Baseline (BM25)</span>
                       </button>
                       <button 
-                        className={`flex items-center gap-1.5 px-2.5 py-1 rounded-md transition-all text-xs ${mode === 'vision' ? 'bg-surface-container-high text-on-surface border border-primary/50 font-semibold shadow-sm' : 'bg-surface-container-low/50 text-on-surface-variant border border-outline-variant/10 hover:border-primary-container/30'}`}
-                        onClick={() => { setMode('vision'); triggerToast('Pipeline mode set to: VISUAL VLM'); }}
+                        className={`flex items-center gap-1.5 px-2.5 py-1 rounded-md transition-all text-xs ${mode === 'visual' ? 'bg-surface-container-high text-on-surface border border-primary/50 font-semibold shadow-sm' : 'bg-surface-container-low/50 text-on-surface-variant border border-outline-variant/10 hover:border-primary-container/30'}`}
+                        onClick={() => { setMode('visual'); triggerToast('Pipeline mode set to: VISUAL VLM'); }}
                       >
                         <span className="w-1.5 h-1.5 rounded-full bg-primary"></span>
                         <span>Visual VLM (ColQwen2)</span>
                       </button>
                       <button 
-                        className={`flex items-center gap-1.5 px-2.5 py-1 rounded-md transition-all text-xs ${mode === 'hybrid' ? 'bg-surface-container-high text-on-surface border border-secondary/50 font-semibold shadow-sm' : 'bg-surface-container-low/50 text-on-surface-variant border border-outline-variant/10 hover:border-secondary/30'}`}
-                        onClick={() => { setMode('hybrid'); triggerToast('Pipeline mode set to: HYBRID RAG'); }}
+                        className={`flex items-center gap-1.5 px-2.5 py-1 rounded-md transition-all text-xs ${mode === 'hybrid_reranked' ? 'bg-surface-container-high text-on-surface border border-secondary/50 font-semibold shadow-sm' : 'bg-surface-container-low/50 text-on-surface-variant border border-outline-variant/10 hover:border-secondary/30'}`}
+                        onClick={() => { setMode('hybrid_reranked'); triggerToast('Pipeline mode set to: HYBRID RERANKED'); }}
                       >
                         <span className="w-1.5 h-1.5 rounded-full bg-secondary"></span>
-                        <span>Hybrid RAG (70/30)</span>
+                        <span>Hybrid Reranked (ColQwen2 + RRF)</span>
                       </button>
                     </div>
                   </div>
@@ -862,9 +795,9 @@ export default function App() {
                       { icon: 'groups', text: 'Who is the President of the Student Council?' },
                       { icon: 'payments', text: 'What is the fellowship amount for JRF candidates?' },
                       { icon: 'draw', text: 'Who signed the student council notice?' }
-                    ].map((p, idx) => (
+                    ].map((p) => (
                       <button
-                        key={idx}
+                        key={p.text}
                         className="group flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-surface-container/50 border border-outline-variant/20 hover:border-primary/40 hover:bg-surface-container-high transition-all text-xs"
                         onClick={() => {
                           setQuestion(p.text)
@@ -890,27 +823,27 @@ export default function App() {
                     <div className="flex items-center gap-2">
                       <h2 className="text-xs text-on-surface font-bold">Indexed Corpus Repository</h2>
                       <span className="px-1.5 py-0.2 rounded-full bg-primary-container/20 border border-primary/30 text-primary text-[9px] font-semibold">
-                        {documents.length || 7} Documents
+                        {documents.length > 0 ? `${documents.length} Documents` : 'Corpus Repository'}
                       </span>
                     </div>
                   </div>
                   <div className="flex items-center gap-2 text-[10px]">
                     <div className="flex items-center gap-1 px-2 py-0.5 rounded bg-surface-container-low border border-outline-variant/15 text-on-surface-variant">
                       <span className="material-symbols-outlined text-secondary text-[13px]">layers</span>
-                      <span>25 Pages</span>
+                      <span>{health?.total_pages != null ? `${health.total_pages} Pages` : '25 Pages'}</span>
                     </div>
                     <div className="flex items-center gap-1 px-2 py-0.5 rounded bg-surface-container-low border border-tertiary/30 text-tertiary font-semibold">
                       <span className="w-1.5 h-1.5 rounded-full bg-tertiary"></span>
-                      <span>300 DPI Vector Index</span>
+                      <span>Multi-Vector Index</span>
                     </div>
                   </div>
                 </div>
 
-                {/* 4-Column Clean Document Grid - NO BOGUS SKELETON BOXES */}
+                {/* Dynamic Document Grid */}
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2.5 stagger-5">
-                  {CORPUS_DOCS.map((doc, idx) => (
+                  {documents.map((doc) => (
                     <div
-                      key={idx}
+                      key={doc.notice_id}
                       className="doc-card group relative flex flex-col justify-between p-3 rounded-xl bg-surface-container/40 border border-outline-variant/20 hover:border-primary/40 hover:bg-surface-container-high hover:-translate-y-0.5 transition-all shadow-sm cursor-pointer space-y-2"
                       onClick={() => setDocModal(doc)}
                     >
@@ -919,26 +852,26 @@ export default function App() {
                           <div className="flex items-center gap-1.5 min-w-0">
                             <span className="material-symbols-outlined text-primary text-[15px] shrink-0">description</span>
                             <span className="font-mono text-[11px] font-semibold text-primary truncate">
-                              {doc.id}
+                              {doc.notice_id}.pdf
                             </span>
                           </div>
                           <span className="px-1.5 py-0.2 rounded bg-surface-container-lowest text-[9px] text-on-surface-variant border border-outline-variant/20 shrink-0">
-                            {doc.pages}
+                            {doc.page_count} page{doc.page_count > 1 ? 's' : ''}
                           </span>
                         </div>
                         <h3 className="text-xs font-bold text-on-surface group-hover:text-primary transition-colors line-clamp-1">
-                          {doc.title}
+                          {doc.original_filename || doc.canonical_filename || doc.notice_id}
                         </h3>
                         <p className="text-[11px] text-on-surface-variant line-clamp-2 leading-relaxed">
-                          {doc.desc}
+                          Official NIT Jamshedpur document page extract. Text availability: {doc.text_availability}.
                         </p>
                       </div>
 
                       <div className="pt-2 flex items-center justify-between border-t border-outline-variant/15 text-[10px]">
                         <span className="px-1.5 py-0.5 rounded bg-surface-container-high text-secondary font-medium border border-secondary/20">
-                          {doc.tag}
+                          {doc.text_availability === 'native' ? 'Native Text' : 'OCR Extracted'}
                         </span>
-                        <span className="text-outline font-mono">{doc.dpi}</span>
+                        <span className="text-outline font-mono">Indexed</span>
                       </div>
                     </div>
                   ))}
@@ -955,12 +888,12 @@ export default function App() {
                       </div>
                       <h4 className="text-xs font-bold text-on-surface">Embeddings Synced</h4>
                       <p className="text-[11px] text-on-surface-variant leading-relaxed">
-                        Dual-vector indexes ready for Groq Llama-3.3-70B synthesis.
+                        Dual-vector indexes ready for Groq {health?.configured_model || 'Qwen'} synthesis.
                       </p>
                     </div>
                     <div className="pt-2 border-t border-outline-variant/15 flex items-center justify-between text-[10px] text-outline font-mono">
-                      <span>VLM RAM</span>
-                      <span className="text-on-surface font-semibold">1.82 GB</span>
+                      <span>Status</span>
+                      <span className="text-on-surface font-semibold">{health?.status === 'ok' ? 'Ready' : 'Offline'}</span>
                     </div>
                   </div>
                 </div>
@@ -978,18 +911,18 @@ export default function App() {
             <div className="flex items-center justify-between pb-2 border-b border-outline-variant/30">
               <div className="flex items-center gap-2">
                 <span className="material-symbols-outlined text-primary text-[18px]">description</span>
-                <span className="text-xs font-bold text-primary font-mono">{docModal.id}</span>
+                <span className="text-xs font-bold text-primary font-mono">{docModal.notice_id}.pdf</span>
               </div>
               <button className="p-1 rounded-lg text-outline hover:text-on-surface hover:bg-surface-container-high transition-colors" onClick={() => setDocModal(null)}>
                 <span className="material-symbols-outlined text-[16px]">close</span>
               </button>
             </div>
             <div className="space-y-1.5 text-xs">
-              <h3 className="text-sm text-on-surface font-semibold">{docModal.title}</h3>
-              <p className="text-on-surface-variant">{docModal.desc}</p>
+              <h3 className="text-sm text-on-surface font-semibold">{docModal.original_filename || docModal.canonical_filename || docModal.notice_id}</h3>
+              <p className="text-on-surface-variant">Pages: {docModal.page_count} | Text: {docModal.text_availability}</p>
               <div className="p-2.5 rounded-lg bg-surface-container-lowest border border-outline-variant/30 flex items-center justify-between">
                 <span className="text-on-surface-variant">Status: <span className="text-tertiary font-semibold">Indexed</span></span>
-                <span className="text-on-surface-variant">Density: <span className="text-secondary font-semibold">300 DPI</span></span>
+                <span className="text-on-surface-variant">Format: <span className="text-secondary font-semibold">PDF Page</span></span>
               </div>
             </div>
             <div className="flex items-center justify-end gap-2 pt-2 border-t border-outline-variant/20">
@@ -999,10 +932,10 @@ export default function App() {
               <button 
                 className="px-3 py-1.5 rounded-lg bg-primary-container text-white text-xs font-semibold hover:brightness-110 shadow-sm transition-all flex items-center gap-1"
                 onClick={() => {
-                  setQuestion(`Summarize key details in ${docModal.id} (${docModal.title})`)
+                  setQuestion(`Summarize key details in ${docModal.notice_id}.pdf`)
                   setDocModal(null)
                   if (searchInputRef.current) searchInputRef.current.focus()
-                  triggerToast(`Query formulated for ${docModal.id}`)
+                  triggerToast(`Query formulated for ${docModal.notice_id}`)
                 }}
               >
                 <span className="material-symbols-outlined text-[14px]">query_stats</span>
@@ -1033,7 +966,7 @@ export default function App() {
           </div>
           <div className="flex items-center gap-2 shrink-0 text-[10px] text-tertiary">
             <span className="w-1.5 h-1.5 rounded-full bg-tertiary"></span>
-            <span>E2E Latency: 420ms</span>
+            <span>Status: {health?.status === 'ok' ? 'System Operational' : 'Ready'}</span>
           </div>
         </div>
       </footer>

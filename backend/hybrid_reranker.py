@@ -1,13 +1,8 @@
-"""Improved Hybrid retrieval using candidate union + ColPali VLM visual evidence.
-
-Combines text (BM25 + Dense) candidate recall with ColPali VLM multi-vector
-late-interaction patch matching scores for ultra-fast, high-precision retrieval on GPU.
-"""
-
 from typing import Any, Dict, List
 
-from backend.config import HYBRID_CANDIDATE_UNION_SIZE
+from backend.config import HYBRID_CANDIDATE_UNION_SIZE, HYBRID_RRF_K
 from backend.text_retrieval import TextIndex
+from backend.visual_reranker import VisualReranker
 from backend.visual_retrieval import VisualIndex
 
 
@@ -15,12 +10,13 @@ class HybridRerankedRetriever:
     def __init__(self, text_index: TextIndex, visual_index: VisualIndex):
         self.text_index = text_index
         self.visual_index = visual_index
+        self.visual_reranker = VisualReranker()
 
     @staticmethod
     def _rank_score(rank: int | None, floor: float = 0.0, decay: float = 0.1) -> float:
-        if rank is None:
+        if rank is None or rank <= 0:
             return floor
-        return 1.0 / (10.0 + rank * decay)
+        return 1.0 / (HYBRID_RRF_K + rank * decay)
 
     def search(
         self,
@@ -39,56 +35,77 @@ class HybridRerankedRetriever:
             entry = c.copy()
             entry["text_rank"] = rank
             entry["visual_rank"] = None
-            entry["text_rank_score"] = self._rank_score(rank, floor=0.1, decay=0.1)
-            entry["visual_rank_score"] = 0.0
+            entry["text_rrf"] = self._rank_score(rank, floor=0.0)
+            entry["visual_rrf"] = 0.0
+            entry["colpali_score"] = 0.0
             merged[key] = entry
 
         for rank, c in enumerate(visual_candidates, start=1):
             key = f"{c['notice_id']}_p{c['page_number']}"
             if key in merged:
                 merged[key]["visual_rank"] = rank
-                merged[key]["visual_rank_score"] = self._rank_score(rank, floor=0.1, decay=0.1)
+                merged[key]["visual_rrf"] = self._rank_score(rank, floor=0.0)
                 merged[key]["colpali_score"] = float(c.get("score", 0.0))
             else:
                 entry = c.copy()
                 entry["text_rank"] = None
                 entry["visual_rank"] = rank
-                entry["text_rank_score"] = 0.0
-                entry["visual_rank_score"] = self._rank_score(rank, floor=0.1, decay=0.1)
+                entry["text_rrf"] = 0.0
+                entry["visual_rrf"] = self._rank_score(rank, floor=0.0)
                 entry["colpali_score"] = float(c.get("score", 0.0))
                 merged[key] = entry
 
         candidates = list(merged.values())
-        
-        # Sort candidate union by visual rank (ColPali VLM multi-vector match)
-        visual_scored = sorted(
-            candidates,
-            key=lambda x: (x.get("visual_rank") if x.get("visual_rank") is not None else 999, -(x.get("colpali_score", 0.0)))
-        )
+        if not candidates:
+            return []
+
+        # Invoke fine-grained multi-scale VisualReranker over candidate union
+        try:
+            reranked_visual = self.visual_reranker.score_candidates(
+                query, candidates=candidates, top_k=len(candidates)
+            )
+            reranked_lookup = {
+                f"{r['notice_id']}_p{r['page_number']}": r
+                for r in reranked_visual
+            }
+        except Exception as exc:
+            print(f"Hybrid visual reranking fallback ({exc})")
+            reranked_lookup = {}
 
         final_results: List[Dict[str, Any]] = []
-        for visual_rank, entry in enumerate(visual_scored, start=1):
-            text_score = float(entry.get("text_rank_score", 0.0))
-            initial_visual_score = float(entry.get("visual_rank_score", 0.0))
-            local_visual_rank_score = self._rank_score(visual_rank, floor=0.1, decay=0.1)
+        for entry in candidates:
+            key = f"{entry['notice_id']}_p{entry['page_number']}"
+            v_info = reranked_lookup.get(key, {})
 
-            # Text remains the anchor; ColPali VLM visual evidence contributes where available.
-            if text_score > 0:
-                combined = 0.75 * text_score + 0.20 * local_visual_rank_score + 0.05 * initial_visual_score
+            text_rrf = float(entry.get("text_rrf", 0.0))
+            visual_rrf = float(entry.get("visual_rrf", 0.0))
+            v_score = float(v_info.get("visual_rerank_score", entry.get("colpali_score", 0.0)))
+
+            # Normalize v_score (typical ColPali scores range ~0..25)
+            v_norm = min(1.0, max(0.0, v_score / 25.0)) if v_score > 0 else 0.0
+
+            # Score fusion: text anchor + visual RRF + fine-grained visual score
+            if text_rrf > 0 and visual_rrf > 0:
+                combined = 0.50 * text_rrf + 0.35 * visual_rrf + 0.15 * v_norm
+            elif text_rrf > 0:
+                combined = 0.85 * text_rrf
             else:
-                # Visual-only candidates cannot overwhelm text-anchored candidates.
-                combined = 0.35 * local_visual_rank_score + 0.15 * initial_visual_score
+                combined = 0.70 * visual_rrf + 0.30 * v_norm
 
             result = entry.copy()
+            if v_info:
+                for k in ("best_tile_box", "best_tile_label", "visual_evidence_type", "full_page_sim", "max_tile_sim"):
+                    if k in v_info:
+                        result[k] = v_info[k]
+
             result["score"] = float(combined)
             result["retrieval_method"] = "hybrid_reranked"
             result["fusion_details"] = {
                 "text_rank": entry.get("text_rank"),
                 "visual_rank": entry.get("visual_rank"),
-                "text_rank_score": round(text_score, 4),
-                "initial_visual_rank_score": round(initial_visual_score, 4),
-                "visual_rerank_rank": visual_rank,
-                "visual_rerank_rank_score": round(local_visual_rank_score, 4),
+                "text_rrf": round(text_rrf, 4),
+                "visual_rrf": round(visual_rrf, 4),
+                "visual_rerank_score": round(v_score, 4),
                 "combined_score": round(combined, 4),
             }
             result["evidence_signal"] = round(combined, 4)
