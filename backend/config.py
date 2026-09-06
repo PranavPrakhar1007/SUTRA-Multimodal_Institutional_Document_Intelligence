@@ -19,17 +19,20 @@ EMBEDDINGS_DIR.mkdir(parents=True, exist_ok=True)
 TEXT_EMBEDDING_MODEL = "all-MiniLM-L6-v2"
 VISUAL_EMBEDDING_MODEL = "vidore/colqwen2-v1.0"
 
+# LLM Provider default
+LLM_PROVIDER = os.environ.get("LLM_PROVIDER", "groq")
+
 # API-based multimodal generation models.
 XAI_API_KEY = os.environ.get("XAI_API_KEY", "")
-XAI_MODEL = "grok-4.3"
+XAI_MODEL = os.environ.get("XAI_MODEL", "grok-2-vision-128k")
 XAI_BASE_URL = "https://api.x.ai/v1"
 
 GROQ_API_KEY = os.environ.get("GROQ_API_KEY", "")
-GROQ_MODEL = "qwen/qwen3.8-27b"
+GROQ_MODEL = os.environ.get("GROQ_MODEL", "llama-3.3-70b-versatile")
 GROQ_BASE_URL = "https://api.groq.com/openai/v1"
 
 GEMINI_API_KEY = os.environ.get("GEMINI_API_KEY", "")
-GEMINI_MODEL = "gemini-3.8-flash"
+GEMINI_MODEL = os.environ.get("GEMINI_MODEL", "gemini-1.5-flash")
 
 KEYS_FILE = DATA_DIR / "keys.json"
 
@@ -56,7 +59,7 @@ def load_persistent_keys():
             pass
 
 
-def get_llm_provider() -> str | None:
+def get_llm_provider() -> str:
     if GROQ_API_KEY:
         return "groq"
     if XAI_API_KEY:
