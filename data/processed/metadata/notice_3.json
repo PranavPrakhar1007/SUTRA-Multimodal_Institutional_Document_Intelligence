@@ -7,11 +7,11 @@
       "page_number": 1,
       "width": 578.2,
       "height": 824.4,
-      "image_path": "data\\processed\\pages\\notice_3\\page_1.png",
+      "image_path": "data/processed/pages/notice_3/page_1.png",
       "image_size_bytes": 1414952,
       "image_width": 1157,
       "image_height": 1649,
-      "text_path": "data\\processed\\text\\notice_3\\page_1.txt",
+      "text_path": "data/processed/text/notice_3/page_1.txt",
       "text_length": 3033,
       "has_text": true,
       "word_count": 444,
@@ -60,7 +60,7 @@
             ]
           ],
           "text": "NATIONAL INSTITUTE OF TECHNOLOGY JAMSHEDPUR",
-          "confidence": 0.9159
+          "confidence": 0.9951
         },
         {
           "box": [
@@ -170,7 +170,7 @@
             ]
           ],
           "text": "No:: NITJSRISAC/Guest Coach/2026-27704",
-          "confidence": 0.5223
+          "confidence": 0.521
         },
         {
           "box": [
@@ -236,7 +236,7 @@
             ]
           ],
           "text": "The Student Activity Centre, NIT Jamshedpur; is looking to engage a Guest Coach on a purely temporary and",
-          "confidence": 0.5592
+          "confidence": 0.5559
         },
         {
           "box": [
@@ -258,7 +258,7 @@
             ]
           ],
           "text": "as-and-when-required basis to improve the performance of the Institute's teams in various intra- and inter-",
-          "confidence": 0.7572
+          "confidence": 0.7685
         },
         {
           "box": [
@@ -280,7 +280,7 @@
             ]
           ],
           "text": "institute tournaments for the academic year 2026-27.",
-          "confidence": 0.836
+          "confidence": 0.8427
         },
         {
           "box": [
@@ -544,7 +544,7 @@
             ]
           ],
           "text": "No:",
-          "confidence": 0.5383
+          "confidence": 0.5457
         },
         {
           "box": [
@@ -588,7 +588,7 @@
             ]
           ],
           "text": "(Maximum per",
-          "confidence": 0.9667
+          "confidence": 0.9634
         },
         {
           "box": [
@@ -698,7 +698,7 @@
             ]
           ],
           "text": "(Maximum per Day)",
-          "confidence": 0.8172
+          "confidence": 0.8046
         },
         {
           "box": [
@@ -808,7 +808,7 @@
             ]
           ],
           "text": "03 hours/",
-          "confidence": 0.983
+          "confidence": 0.9825
         },
         {
           "box": [
@@ -1446,7 +1446,7 @@
             ]
           ],
           "text": "Diploma",
-          "confidence": 0.9993
+          "confidence": 0.9991
         },
         {
           "box": [
@@ -1710,7 +1710,7 @@
             ]
           ],
           "text": "participation at National",
-          "confidence": 0.8904
+          "confidence": 0.8887
         },
         {
           "box": [
@@ -1776,7 +1776,7 @@
             ]
           ],
           "text": "Desirable Qualification: Minimum one year of coaching experience in educational institute of repute_",
-          "confidence": 0.766
+          "confidence": 0.7524
         },
         {
           "box": [
@@ -1798,7 +1798,7 @@
             ]
           ],
           "text": "General Information: A walk-in interview with respective practical field test will be held on 02.09.2026",
-          "confidence": 0.6446
+          "confidence": 0.6435
         },
         {
           "box": [
@@ -1820,7 +1820,7 @@
             ]
           ],
           "text": "at 10:00am in the office of Student Activity Centre, National Institute of Technology Jamshedpur",
-          "confidence": 0.6019
+          "confidence": 0.599
         },
         {
           "box": [
@@ -1952,7 +1952,7 @@
             ]
           ],
           "text": "Application Requirements: Interested candidates must bring:",
-          "confidence": 0.9782
+          "confidence": 0.9807
         },
         {
           "box": [
@@ -1996,7 +1996,7 @@
             ]
           ],
           "text": "Completed application form in the prescribed format",
-          "confidence": 0.9401
+          "confidence": 0.94
         },
         {
           "box": [
@@ -2040,7 +2040,7 @@
             ]
           ],
           "text": "Self-attested photocopies of relevant educational qualifications",
-          "confidence": 0.8611
+          "confidence": 0.8534
         },
         {
           "box": [
@@ -2106,7 +2106,7 @@
             ]
           ],
           "text": "One recent passport-size photograph",
-          "confidence": 0.8538
+          "confidence": 0.8632
         },
         {
           "box": [
@@ -2326,7 +2326,7 @@
             ]
           ],
           "text": "Coaches may be required to travel with the team for tournaments_",
-          "confidence": 0.7605
+          "confidence": 0.7854
         },
         {
           "box": [
@@ -2414,7 +2414,7 @@
             ]
           ],
           "text": "Candidates from Govt /Semi-Govt /Autonomous bodies must",
-          "confidence": 0.9309
+          "confidence": 0.9342
         },
         {
           "box": [
@@ -2480,7 +2480,7 @@
             ]
           ],
           "text": "The engagement as Guest Coach will be for the academic year 2026-27; however; the Sports Section",
-          "confidence": 0.7022
+          "confidence": 0.7165
         },
         {
           "box": [
@@ -2502,7 +2502,7 @@
             ]
           ],
           "text": "reserves the right to discontinue the engagement at any point of time:",
-          "confidence": 0.7955
+          "confidence": 0.7788
         },
         {
           "box": [
@@ -2524,7 +2524,7 @@
             ]
           ],
           "text": "Contact details (f any query): +91 9836353526, office sas@nitiscacin_during 09.00",
-          "confidence": 0.488
+          "confidence": 0.489
         },
         {
           "box": [
@@ -2612,7 +2612,7 @@
             ]
           ],
           "text": "(Available on working days from 09.00 AM to 05.00 PM).",
-          "confidence": 0.8145
+          "confidence": 0.8134
         },
         {
           "box": [
@@ -2656,7 +2656,7 @@
             ]
           ],
           "text": "Dean Students",
-          "confidence": 0.9178
+          "confidence": 0.9186
         },
         {
           "box": [
@@ -2744,7 +2744,7 @@
             ]
           ],
           "text": "to: Webmaster with a request to upload in to the institute website_",
-          "confidence": 0.9313
+          "confidence": 0.9315
         },
         {
           "box": [

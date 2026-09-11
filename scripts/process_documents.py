@@ -17,7 +17,7 @@ project_root = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(project_root))
 
 from backend.path_utils import relative_to_project
-import fitz  # PyMuPDF
+import pymupdf as fitz  # PyMuPDF
 
 
 def process_document(pdf_path: Path, output_dir: Path, notice_id: str) -> dict:
@@ -92,16 +92,17 @@ def process_document(pdf_path: Path, output_dir: Path, notice_id: str) -> dict:
 
 
 def main():
-    project_root = Path(__file__).resolve().parent.parent
-    raw_dir = project_root / "data" / "raw"
-    output_dir = project_root / "data" / "processed"
+    from backend.config import DOCUMENTS_DIR, PROCESSED_DIR
+
+    raw_dir = DOCUMENTS_DIR
+    output_dir = PROCESSED_DIR
     metadata_dir = output_dir / "metadata"
     metadata_dir.mkdir(parents=True, exist_ok=True)
 
-    pdfs = sorted(raw_dir.glob("notice_*.pdf"), key=lambda p: int(p.stem.split("_")[1]))
+    pdfs = sorted(list(raw_dir.glob("*.pdf")))
 
     if not pdfs:
-        print("ERROR: No canonical PDFs found in data/raw/")
+        print(f"ERROR: No PDF documents found in {raw_dir}")
         return
 
     print(f"Processing {len(pdfs)} documents...\n")

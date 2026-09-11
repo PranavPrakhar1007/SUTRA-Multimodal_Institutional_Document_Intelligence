@@ -273,5 +273,60 @@
     "relative_image_path": "data/processed/pages/notice_7/page_4.png",
     "image_width": 1224,
     "image_height": 1584
+  },
+  {
+    "notice_id": "Time Table Autumn Semester 26 -27",
+    "doc_id": "Time Table Autumn Semester 26 -27",
+    "filename": "Time Table Autumn Semester 26 -27.pdf",
+    "file_name": "Time Table Autumn Semester 26 -27.pdf",
+    "page_number": 1,
+    "page": 1,
+    "relative_image_path": "data/processed/pages/Time Table Autumn Semester 26 -27/page_1.png",
+    "image_width": 1190,
+    "image_height": 1684
+  },
+  {
+    "notice_id": "Time Table Autumn Semester 26 -27",
+    "doc_id": "Time Table Autumn Semester 26 -27",
+    "filename": "Time Table Autumn Semester 26 -27.pdf",
+    "file_name": "Time Table Autumn Semester 26 -27.pdf",
+    "page_number": 2,
+    "page": 2,
+    "relative_image_path": "data/processed/pages/Time Table Autumn Semester 26 -27/page_2.png",
+    "image_width": 1190,
+    "image_height": 1684
+  },
+  {
+    "notice_id": "Time Table Autumn Semester 26 -27",
+    "doc_id": "Time Table Autumn Semester 26 -27",
+    "filename": "Time Table Autumn Semester 26 -27.pdf",
+    "file_name": "Time Table Autumn Semester 26 -27.pdf",
+    "page_number": 3,
+    "page": 3,
+    "relative_image_path": "data/processed/pages/Time Table Autumn Semester 26 -27/page_3.png",
+    "image_width": 1190,
+    "image_height": 1684
+  },
+  {
+    "notice_id": "Time Table Autumn Semester 26 -27",
+    "doc_id": "Time Table Autumn Semester 26 -27",
+    "filename": "Time Table Autumn Semester 26 -27.pdf",
+    "file_name": "Time Table Autumn Semester 26 -27.pdf",
+    "page_number": 4,
+    "page": 4,
+    "relative_image_path": "data/processed/pages/Time Table Autumn Semester 26 -27/page_4.png",
+    "image_width": 1190,
+    "image_height": 1684
+  },
+  {
+    "notice_id": "Time Table Autumn Semester 26 -27",
+    "doc_id": "Time Table Autumn Semester 26 -27",
+    "filename": "Time Table Autumn Semester 26 -27.pdf",
+    "file_name": "Time Table Autumn Semester 26 -27.pdf",
+    "page_number": 5,
+    "page": 5,
+    "relative_image_path": "data/processed/pages/Time Table Autumn Semester 26 -27/page_5.png",
+    "image_width": 1190,
+    "image_height": 1684
   }
 ]

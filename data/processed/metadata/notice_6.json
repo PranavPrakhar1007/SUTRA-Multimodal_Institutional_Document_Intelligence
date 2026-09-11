@@ -7,11 +7,11 @@
       "page_number": 1,
       "width": 595.0,
       "height": 840.0,
-      "image_path": "data\\processed\\pages\\notice_6\\page_1.png",
+      "image_path": "data/processed/pages/notice_6/page_1.png",
       "image_size_bytes": 1723348,
       "image_width": 1190,
       "image_height": 1680,
-      "text_path": "data\\processed\\text\\notice_6\\page_1.txt",
+      "text_path": "data/processed/text/notice_6/page_1.txt",
       "text_length": 2465,
       "has_text": true,
       "word_count": 367,
@@ -38,7 +38,7 @@
             ]
           ],
           "text": "7414",
-          "confidence": 0.1619
+          "confidence": 0.1639
         },
         {
           "box": [
@@ -170,7 +170,7 @@
             ]
           ],
           "text": "2Trr",
-          "confidence": 0.1022
+          "confidence": 0.1054
         },
         {
           "box": [
@@ -236,7 +236,7 @@
             ]
           ],
           "text": "R7ext",
-          "confidence": 0.0128
+          "confidence": 0.0126
         },
         {
           "box": [
@@ -412,7 +412,7 @@
             ]
           ],
           "text": "(An Institution of National Importance",
-          "confidence": 0.8839
+          "confidence": 0.8838
         },
         {
           "box": [
@@ -522,7 +522,7 @@
             ]
           ],
           "text": "3ugal Qi4d) * *ridy",
-          "confidence": 0.0237
+          "confidence": 0.0204
         },
         {
           "box": [
@@ -566,7 +566,7 @@
             ]
           ],
           "text": "Ref: No. NITJSRIACD/2026/163",
-          "confidence": 0.8696
+          "confidence": 0.8715
         },
         {
           "box": [
@@ -632,7 +632,7 @@
             ]
           ],
           "text": "Guidelines for Autumn Semester Fee Payment (Except for 1\" year students) for AY: 2026-27",
-          "confidence": 0.7802
+          "confidence": 0.7916
         },
         {
           "box": [
@@ -676,7 +676,7 @@
             ]
           ],
           "text": "1. Direct Payment through HDFC Qfix",
-          "confidence": 0.7407
+          "confidence": 0.8452
         },
         {
           "box": [
@@ -698,7 +698,7 @@
             ]
           ],
           "text": "Students should pay through HDFC Qfix Portal: https ILwWweduqfix com /PayDirectl#Istudent",
-          "confidence": 0.4226
+          "confidence": 0.4207
         },
         {
           "box": [
@@ -720,7 +720,7 @@
             ]
           ],
           "text": "Steps to make payment: Open the HDFC Qfix Portal > Select NIT Jamshedpur under the Institute",
-          "confidence": 0.9133
+          "confidence": 0.9175
         },
         {
           "box": [
@@ -764,7 +764,7 @@
             ]
           ],
           "text": "Enter your Institute Registration Number in the Application Number field",
-          "confidence": 0.9277
+          "confidence": 0.9314
         },
         {
           "box": [
@@ -786,7 +786,7 @@
             ]
           ],
           "text": "Select NIT Jamshedpur under Education  Institution Name",
-          "confidence": 0.5902
+          "confidence": 0.5682
         },
         {
           "box": [
@@ -852,7 +852,7 @@
             ]
           ],
           "text": "Verify the",
-          "confidence": 0.996
+          "confidence": 0.9957
         },
         {
           "box": [
@@ -940,7 +940,7 @@
             ]
           ],
           "text": "transaction.",
-          "confidence": 0.6661
+          "confidence": 0.6915
         },
         {
           "box": [
@@ -1006,7 +1006,7 @@
             ]
           ],
           "text": "Students shall deposit the semester fee through the Virtual Account Number (VAN) with",
-          "confidence": 0.7216
+          "confidence": 0.7574
         },
         {
           "box": [
@@ -1138,7 +1138,7 @@
             ]
           ],
           "text": "Format of VAN: NITJSR + Institute Registration Number + First Name (1\" four digit)",
-          "confidence": 0.7489
+          "confidence": 0.7553
         },
         {
           "box": [
@@ -1358,7 +1358,7 @@
             ]
           ],
           "text": "202SUGXXOO1, the VAN will be: NITJSRZOZSUGXXOOISAMA",
-          "confidence": 0.6371
+          "confidence": 0.6359
         },
         {
           "box": [
@@ -1380,7 +1380,7 @@
             ]
           ],
           "text": "3. Fee Payment through SBI Education Loan, Bihar Credit Card Scheme & DASA Students",
-          "confidence": 0.7158
+          "confidence": 0.7049
         },
         {
           "box": [
@@ -1490,7 +1490,7 @@
             ]
           ],
           "text": "Bank & Branch: State Bank of India, NIT Jamshedpur Branch",
-          "confidence": 0.8085
+          "confidence": 0.8045
         },
         {
           "box": [
@@ -1512,7 +1512,7 @@
             ]
           ],
           "text": "IFSC Code: SBINOOO1 882",
-          "confidence": 0.7406
+          "confidence": 0.741
         },
         {
           "box": [
@@ -1578,7 +1578,7 @@
             ]
           ],
           "text": "Submit education loan/credit card payment details via the Google Form by 28th",
-          "confidence": 0.8384
+          "confidence": 0.8416
         },
         {
           "box": [
@@ -1600,7 +1600,7 @@
             ]
           ],
           "text": "July 2026: https I forms gle/vxkek Yy WiPXptINW?",
-          "confidence": 0.223
+          "confidence": 0.2294
         },
         {
           "box": [
@@ -1622,7 +1622,7 @@
             ]
           ],
           "text": "Collect your original education loan fee receipt from the Accounts Section and keep it safely",
-          "confidence": 0.7052
+          "confidence": 0.6197
         },
         {
           "box": [
@@ -1666,7 +1666,7 @@
             ]
           ],
           "text": "balance fee remains after loan adjustment; partial disbursement; or other adjustments,",
-          "confidence": 0.6559
+          "confidence": 0.6609
         },
         {
           "box": [
@@ -1688,7 +1688,7 @@
             ]
           ],
           "text": "pay it through SBI Collect under \"Balance Fee for Autumn Semester 2026-27_",
-          "confidence": 0.853
+          "confidence": 0.8531
         },
         {
           "box": [
@@ -1776,7 +1776,7 @@
             ]
           ],
           "text": "X",
-          "confidence": 0.29
+          "confidence": 0.293
         },
         {
           "box": [
@@ -1864,7 +1864,7 @@
             ]
           ],
           "text": "www nitjsr.acin",
-          "confidence": 0.7621
+          "confidence": 0.7447
         },
         {
           "box": [
@@ -1908,7 +1908,7 @@
             ]
           ],
           "text": "Jamshedpur, Adityapur, District -",
-          "confidence": 0.626
+          "confidence": 0.6236
         },
         {
           "box": [

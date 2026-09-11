@@ -22,8 +22,14 @@ def _get_colpali():
     """Lazy-load 4-bit quantized ColPali / ColQwen2 VLM on CUDA GPU."""
     global _colpali_model, _colpali_processor
     if _colpali_model is None:
+        import gc
         import torch
         from transformers import BitsAndBytesConfig
+
+        # Explicit memory cleanup before heavy model load
+        gc.collect()
+        if torch.cuda.is_available():
+            torch.cuda.empty_cache()
 
         device = "cuda:0" if torch.cuda.is_available() else "cpu"
         print(f"Loading Visual VLM ({VISUAL_EMBEDDING_MODEL}) on {device}...")
@@ -46,12 +52,22 @@ def _get_colpali():
             _colpali_model = model_cls.from_pretrained(
                 VISUAL_EMBEDDING_MODEL,
                 quantization_config=bnb_config,
-                device_map=device,
+                device_map="auto",
+                torch_dtype=torch.float16,
+                low_cpu_mem_usage=True,
             )
         else:
-            _colpali_model = model_cls.from_pretrained(VISUAL_EMBEDDING_MODEL, device_map=device)
+            _colpali_model = model_cls.from_pretrained(
+                VISUAL_EMBEDDING_MODEL,
+                device_map="cpu",
+                torch_dtype=torch.float16,
+                low_cpu_mem_usage=True,
+            )
 
-        _colpali_processor = proc_cls.from_pretrained(VISUAL_EMBEDDING_MODEL)
+        try:
+            _colpali_processor = proc_cls.from_pretrained(VISUAL_EMBEDDING_MODEL, local_files_only=True)
+        except Exception:
+            _colpali_processor = proc_cls.from_pretrained(VISUAL_EMBEDDING_MODEL)
         _colpali_model.eval()
         print(f"Visual VLM ({VISUAL_EMBEDDING_MODEL}) loaded successfully on {device}.")
     return _colpali_model, _colpali_processor
@@ -77,10 +93,7 @@ class VisualIndex:
     def build_from_processed(self, processed_dir: Path):
         """Build portable ColPali multi-vector visual index from page images."""
         self._cuda_img_tensors = None
-        metadata_files = sorted(
-            METADATA_DIR.glob("notice_*.json"),
-            key=lambda p: int(p.stem.split("_")[1]),
-        )
+        metadata_files = sorted([f for f in METADATA_DIR.glob("*.json") if f.name != "all_documents.json"])
 
         self.entries = []
         self.image_embeddings = []
@@ -143,6 +156,20 @@ class VisualIndex:
 
         scores_tensor = processor.score_multi_vector(query_embeddings, self._cuda_img_tensors)[0]
         scores = scores_tensor.cpu().numpy().tolist()
+
+        # Semester entity boosting: boost page scores matching explicit semester query intent (e.g. 5th semester)
+        import re
+        sem_match = re.search(r"\b([1-8])(?:st|nd|rd|th)?\s*(?:sem|semester)\b", query, flags=re.IGNORECASE)
+        if sem_match:
+            target_num = sem_match.group(1)
+            for idx, entry in enumerate(self.entries):
+                nid = entry.get("notice_id", "")
+                pnum = entry.get("page_number", 1)
+                txt_file = PROCESSED_DIR / "text" / nid / f"page_{pnum}.txt"
+                if txt_file.exists():
+                    ptxt = txt_file.read_text(encoding="utf-8", errors="ignore").lower()
+                    if f"{target_num}th sem" in ptxt or f"{target_num}th semester" in ptxt or f"sem {target_num}" in ptxt or f"semester {target_num}" in ptxt or f"sem-{target_num}" in ptxt:
+                        scores[idx] += 2.0
 
         top_indices = np.argsort(-np.array(scores), kind="stable")[:top_k]
 

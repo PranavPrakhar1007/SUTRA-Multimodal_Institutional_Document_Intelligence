@@ -31,7 +31,7 @@
     "notice_id": "notice_5",
     "page_number": 1,
     "has_text": true,
-    "text_length": 1675,
+    "text_length": 1674,
     "relative_image_path": "data/processed/pages/notice_5/page_1.png"
   },
   {
@@ -115,14 +115,14 @@
     "notice_id": "notice_5",
     "page_number": 13,
     "has_text": true,
-    "text_length": 1653,
+    "text_length": 1652,
     "relative_image_path": "data/processed/pages/notice_5/page_13.png"
   },
   {
     "notice_id": "notice_5",
     "page_number": 14,
     "has_text": true,
-    "text_length": 1683,
+    "text_length": 1684,
     "relative_image_path": "data/processed/pages/notice_5/page_14.png"
   },
   {
@@ -173,5 +173,40 @@
     "has_text": true,
     "text_length": 832,
     "relative_image_path": "data/processed/pages/notice_7/page_4.png"
+  },
+  {
+    "notice_id": "Time Table Autumn Semester 26 -27",
+    "page_number": 1,
+    "has_text": true,
+    "text_length": 302,
+    "relative_image_path": "data/processed/pages/Time Table Autumn Semester 26 -27/page_1.png"
+  },
+  {
+    "notice_id": "Time Table Autumn Semester 26 -27",
+    "page_number": 2,
+    "has_text": true,
+    "text_length": 287,
+    "relative_image_path": "data/processed/pages/Time Table Autumn Semester 26 -27/page_2.png"
+  },
+  {
+    "notice_id": "Time Table Autumn Semester 26 -27",
+    "page_number": 3,
+    "has_text": true,
+    "text_length": 248,
+    "relative_image_path": "data/processed/pages/Time Table Autumn Semester 26 -27/page_3.png"
+  },
+  {
+    "notice_id": "Time Table Autumn Semester 26 -27",
+    "page_number": 4,
+    "has_text": true,
+    "text_length": 290,
+    "relative_image_path": "data/processed/pages/Time Table Autumn Semester 26 -27/page_4.png"
+  },
+  {
+    "notice_id": "Time Table Autumn Semester 26 -27",
+    "page_number": 5,
+    "has_text": true,
+    "text_length": 328,
+    "relative_image_path": "data/processed/pages/Time Table Autumn Semester 26 -27/page_5.png"
   }
 ]

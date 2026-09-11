@@ -26,7 +26,7 @@ def _get_sentence_model():
     if _sentence_model is None:
         import torch
         from sentence_transformers import SentenceTransformer
-        device = "cuda:0" if torch.cuda.is_available() else "cpu"
+        device = "cpu"
         print(f"Loading text embedding model: {TEXT_EMBEDDING_MODEL} on {device}...")
         _sentence_model = SentenceTransformer(TEXT_EMBEDDING_MODEL, device=device)
         print(f"Text embedding model loaded on {device}.")
@@ -90,7 +90,7 @@ class TextIndex:
         self.entries = []
         texts = []
 
-        metadata_files = sorted(METADATA_DIR.glob("notice_*.json"), key=lambda p: int(p.stem.split("_")[1]))
+        metadata_files = sorted([f for f in METADATA_DIR.glob("*.json") if f.name != "all_documents.json"])
         for meta_file in metadata_files:
             meta = json.loads(meta_file.read_text(encoding="utf-8"))
             notice_id = meta["notice_id"]

@@ -114,7 +114,7 @@ def main():
             elif mode == "visual_vlm":
                 retrieved = visual.search(question, top_k=page_count)
             elif mode == "visual_reranked":
-                stage1 = visual.search(question, top_k=page_count)
+                stage1 = visual.search(question, top_k=5)
                 retrieved = visual_reranker.score_candidates(question, candidates=stage1, top_k=page_count)
             elif mode == "hybrid_rrf_baseline":
                 retrieved = hybrid_rrf.search(
@@ -127,7 +127,7 @@ def main():
                 retrieved = hybrid_reranked.search(
                     question,
                     top_k=page_count,
-                    candidate_union_size=page_count,
+                    candidate_union_size=5,
                 )
             latency_ms = round((time.perf_counter() - start) * 1000, 2)
 

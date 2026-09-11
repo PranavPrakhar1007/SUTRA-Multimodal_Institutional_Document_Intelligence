@@ -4,8 +4,10 @@ import csv
 import json
 import re
 import sys
+import threading
 import time
 from pathlib import Path
+import urllib.parse
 from typing import Literal, Optional
 
 from fastapi import FastAPI, HTTPException
@@ -23,6 +25,7 @@ from backend.config import (
     HYBRID_CANDIDATE_UNION_SIZE,
     HYBRID_RRF_TEXT_WEIGHT,
     HYBRID_RRF_VISUAL_WEIGHT,
+    HYBRID_VISUAL_RERANK_SIZE,
     METADATA_DIR,
     PAGES_DIR,
     PROCESSED_DIR,
@@ -55,6 +58,7 @@ visual_index: Optional[VisualIndex] = None
 hybrid_retriever: Optional[HybridRetriever] = None
 visual_reranker: Optional[VisualReranker] = None
 hybrid_reranked_retriever: Optional[HybridRerankedRetriever] = None
+request_cancellations: dict[str, threading.Event] = {}
 
 
 @app.on_event("startup")
@@ -80,6 +84,20 @@ def startup():
     hybrid_retriever = HybridRetriever(text_index, visual_index)
     visual_reranker = VisualReranker()
     hybrid_reranked_retriever = HybridRerankedRetriever(text_index, visual_index)
+
+    # Pre-warm text embedding model and visual VLM model during startup
+    try:
+        from backend.text_retrieval import _get_sentence_model
+        _get_sentence_model()
+    except Exception as e:
+        print(f"Warning pre-warming text embedding model: {e}")
+
+    try:
+        from backend.visual_retrieval import _get_colpali
+        _get_colpali()
+    except Exception as e:
+        print(f"Warning pre-warming visual VLM model: {e}")
+
     print(f"Ready: {len(text_index.entries)} text pages / {len(visual_index.entries)} visual pages")
 
 
@@ -93,11 +111,13 @@ class QueryRequest(BaseModel):
     question: str = Field(min_length=1, max_length=2000)
     mode: ModeLiteral = "hybrid_reranked"
     top_k: int = Field(default=5, ge=1, le=25)
+    request_id: Optional[str] = None
 
 
 class CompareRequest(BaseModel):
     question: str = Field(min_length=1, max_length=2000)
     top_k: int = Field(default=3, ge=1, le=10)
+    request_id: Optional[str] = None
 
 
 class SetKeyRequest(BaseModel):
@@ -110,22 +130,48 @@ def _require_indexes():
         raise HTTPException(status_code=503, detail="Retrieval indices are not loaded yet")
 
 
-def _retrieve(question: str, mode: str, top_k: int):
+def _retrieve(question: str, mode: str, top_k: int, cancel_event: Optional[threading.Event] = None):
     _require_indexes()
     if mode in ("text", "text_baseline"):
         return text_index.search(question, top_k=top_k)
     if mode in ("visual_reranked",):
-        return visual_reranker.score_candidates(question, candidates=visual_index.search(question, top_k=top_k * 2), top_k=top_k)
+        return visual_reranker.score_candidates(question, candidates=visual_index.search(question, top_k=top_k * 2), top_k=top_k, cancel_event=cancel_event)
     if mode in ("visual", "vision", "visual_colqwen2", "visual_clip_baseline"):
         return visual_index.search(question, top_k=top_k)
     if mode in ("hybrid_reranked",):
-        return hybrid_reranked_retriever.search(question, top_k=top_k)
+        # The default hybrid path uses precomputed text and visual embeddings.
+        # High-resolution tile reranking is an optional specialist path; running
+        # it for every hybrid query can turn a bounded request into minutes of
+        # GPU work on a laptop GPU.
+        return hybrid_retriever.search(question, top_k=top_k, candidate_k=max(top_k * 2, 5))
     return hybrid_retriever.search(
         question,
         top_k=top_k,
         text_weight=HYBRID_RRF_TEXT_WEIGHT,
         visual_weight=HYBRID_RRF_VISUAL_WEIGHT,
     )
+
+
+def _get_request_event(request_id: Optional[str]) -> threading.Event:
+    if not request_id:
+        return threading.Event()
+    event = threading.Event()
+    request_cancellations[request_id] = event
+    return event
+
+
+def _cleanup_request_event(request_id: Optional[str]):
+    if request_id:
+        request_cancellations.pop(request_id, None)
+
+
+@app.post("/api/cancel/{request_id}")
+def cancel_request(request_id: str):
+    event = request_cancellations.get(request_id)
+    if event is None:
+        return {"status": "not_found"}
+    event.set()
+    return {"status": "cancelled", "request_id": request_id}
 
 
 def _page_response(r: dict) -> dict:
@@ -141,7 +187,7 @@ def _page_response(r: dict) -> dict:
         "score": round(float(r.get("score", 0.0)), 6),
         "retrieval_method": r.get("retrieval_method", ""),
         "has_text": r.get("has_text", False),
-        "image_url": f"/api/pages/{nid}/{pnum}",
+        "image_url": f"/api/pages/{urllib.parse.quote(str(nid))}/{pnum}",
     }
     for key in ("best_tile_box", "best_tile_label", "visual_evidence_type", "full_page_sim", "max_tile_sim", "fusion_details"):
         if key in r:
@@ -158,6 +204,7 @@ def health():
         "total_pages": len(text_index.entries) if text_index else 0,
         "llm_provider": "groq",
         "configured_model": cfg.GROQ_MODEL,
+        "llm_configured": bool(cfg.GROQ_API_KEY),
     }
 
 
@@ -204,7 +251,7 @@ def list_documents():
             manifest = {row["notice_id"]: row for row in csv.DictReader(f)}
 
     documents = []
-    for meta_file in sorted(METADATA_DIR.glob("notice_*.json"), key=lambda p: int(p.stem.split("_")[1])):
+    for meta_file in sorted(list(METADATA_DIR.glob("*.json"))):
         meta = json.loads(meta_file.read_text(encoding="utf-8"))
         nid = meta["notice_id"]
         documents.append({
@@ -219,7 +266,8 @@ def list_documents():
 
 @app.get("/api/pages/{notice_id}/{page_number}")
 def get_page_image(notice_id: str, page_number: int):
-    if not re.fullmatch(r"notice_\d+", notice_id) or page_number < 1:
+    notice_id = urllib.parse.unquote(notice_id)
+    if not re.fullmatch(r"[a-zA-Z0-9_\s.-]+", notice_id) or page_number < 1:
         raise HTTPException(status_code=400, detail="Invalid document/page identifier")
     image_path = resolve_page_image(notice_id, page_number)
     if image_path is None:
@@ -239,12 +287,17 @@ def get_corpus_profile():
 def query(request: QueryRequest):
     question = request.question.strip()
     mode = request.mode.lower()
+    cancel_event = _get_request_event(request.request_id)
 
     t_retrieval = time.perf_counter()
-    results = _retrieve(question, mode, request.top_k)
+    results = _retrieve(question, mode, request.top_k, cancel_event=cancel_event)
     retrieval_time_ms = round((time.perf_counter() - t_retrieval) * 1000, 2)
 
+    if cancel_event.is_set():
+        return {"question": question, "mode": mode, "status": "cancelled", "answer": "Request cancelled.", "retrieved_pages": []}
+
     if not results:
+        _cleanup_request_event(request.request_id)
         return {
             "question": question,
             "mode": mode,
@@ -263,7 +316,7 @@ def query(request: QueryRequest):
     generation_time_ms = round((time.perf_counter() - t_generation) * 1000, 2)
 
     retrieved_pages = [_page_response(r) for r in results]
-    return {
+    response = {
         "question": question,
         "mode": mode,
         "answer": gen_result.get("answer", ""),
@@ -275,43 +328,101 @@ def query(request: QueryRequest):
         "total_time_ms": round(retrieval_time_ms + generation_time_ms, 2),
         "status": gen_result.get("status", "unknown"),
     }
+    _cleanup_request_event(request.request_id)
+    return response
 
 
 @app.post("/api/compare")
 def compare(request: CompareRequest):
     question = request.question.strip()
-    modes = [
-        "text_baseline",
-        "visual",
-        "hybrid_rrf_baseline",
-    ]
+    modes = ["text_baseline", "visual", "hybrid_reranked"]
     comparison = {"question": question, "modes": {}}
+    cancel_event = _get_request_event(request.request_id)
 
     t_total = time.perf_counter()
 
+    # Step 1: Perform thread-safe sequential retrieval for all modes
+    mode_retrievals = {}
     for mode in modes:
-        t_retrieval = time.perf_counter()
-        results = _retrieve(question, mode, request.top_k)
-        retrieval_time_ms = round((time.perf_counter() - t_retrieval) * 1000, 2)
+        try:
+            t_ret = time.perf_counter()
+            results = _retrieve(question, mode, request.top_k, cancel_event=cancel_event)
+            ret_ms = round((time.perf_counter() - t_ret) * 1000, 2)
+            mode_retrievals[mode] = {"results": results, "retrieval_time_ms": ret_ms}
+        except Exception as err:
+            print(f"Error during retrieval for mode '{mode}': {err}")
+            mode_retrievals[mode] = {"results": [], "retrieval_time_ms": 0, "error": str(err)}
+
+    # Step 2: Perform parallel Groq LLM answer generation across all 3 modes
+    from concurrent.futures import ThreadPoolExecutor
+
+    def _generate_for_mode(m: str):
+        ret_data = mode_retrievals.get(m, {})
+        results = ret_data.get("results", [])
+        ret_ms = ret_data.get("retrieval_time_ms", 0)
+
+        if "error" in ret_data:
+            return m, {
+                "answer": f"Error during retrieval: {ret_data['error']}",
+                "source": None,
+                "generation_method": "error",
+                "status": "error",
+                "retrieved_pages": [],
+                "retrieval_time_ms": 0,
+                "generation_time_ms": 0,
+            }
 
         if results:
-            t_generation = time.perf_counter()
-            gen = generate_answer(question, results[0], mode=mode)
-            generation_time_ms = round((time.perf_counter() - t_generation) * 1000, 2)
-            payload = {
-                "answer": gen.get("answer", ""),
-                "source": gen.get("source", {}),
-                "generation_method": gen.get("generation_method", ""),
-                "status": gen.get("status", "unknown"),
-            }
+            try:
+                t_gen = time.perf_counter()
+                gen = generate_answer(question, results[0], mode=m)
+                gen_ms = round((time.perf_counter() - t_gen) * 1000, 2)
+                payload = {
+                    "answer": gen.get("answer", ""),
+                    "source": gen.get("source", {}),
+                    "generation_method": gen.get("generation_method", ""),
+                    "status": gen.get("status", "unknown"),
+                    "retrieved_pages": [_page_response(r) for r in results],
+                    "retrieval_time_ms": ret_ms,
+                    "generation_time_ms": gen_ms,
+                }
+            except Exception as gen_err:
+                print(f"Error during generation for mode '{m}': {gen_err}")
+                payload = {
+                    "answer": f"Generation error: {str(gen_err)}",
+                    "source": None,
+                    "generation_method": "error",
+                    "status": "error",
+                    "retrieved_pages": [_page_response(r) for r in results],
+                    "retrieval_time_ms": ret_ms,
+                    "generation_time_ms": 0,
+                }
         else:
-            generation_time_ms = 0
-            payload = {"answer": "No relevant document candidates were retrieved.", "source": None, "generation_method": "none", "status": "no_results"}
+            payload = {
+                "answer": "No relevant document candidates were retrieved.",
+                "source": None,
+                "generation_method": "none",
+                "status": "no_results",
+                "retrieved_pages": [],
+                "retrieval_time_ms": ret_ms,
+                "generation_time_ms": 0,
+            }
 
-        payload["retrieved_pages"] = [_page_response(r) for r in results]
-        payload["retrieval_time_ms"] = retrieval_time_ms
-        payload["generation_time_ms"] = generation_time_ms
-        comparison["modes"][mode] = payload
+        return m, payload
+
+    try:
+        with ThreadPoolExecutor(max_workers=3) as executor:
+            futures = [executor.submit(_generate_for_mode, mode) for mode in modes]
+            for future in futures:
+                if cancel_event.is_set():
+                    break
+                mode_key, payload = future.result()
+                comparison["modes"][mode_key] = payload
+    finally:
+        _cleanup_request_event(request.request_id)
+
+    if cancel_event.is_set():
+        return {"question": question, "modes": {}, "status": "cancelled", "total_time_ms": round((time.perf_counter() - t_total) * 1000, 2)}
 
     comparison["total_time_ms"] = round((time.perf_counter() - t_total) * 1000, 2)
     return comparison

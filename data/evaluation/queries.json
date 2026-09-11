@@ -4,8 +4,8 @@
     "question": "Who is the Chairman of the Student Council Selection Committee?",
     "expected_document": "notice_1.pdf",
     "expected_page": 1,
-    "expected_answer": "Dean Student Welfare",
-    "acceptable_variants": ["Dean (Student Welfare)", "Dean Students Welfare", "Prof. Ashok Kumar (Dean SW)"],
+    "expected_answer": "Prof. Ashok Kumar (Dean Student Welfare)",
+    "acceptable_variants": ["Dean (Student Welfare)", "Dean Students Welfare", "Prof. Ashok Kumar"],
     "document_condition": "scanned",
     "query_type": "clean_text",
     "notes": "Direct factual question."
@@ -251,5 +251,60 @@
     "document_condition": "scanned",
     "query_type": "table_lookup",
     "notes": "PG representative lookup in notice 2."
+  },
+  {
+    "query_id": "Q24",
+    "question": "Who is the General Secretary of the Student Council for 2026-27?",
+    "expected_document": "notice_2.pdf",
+    "expected_page": 1,
+    "expected_answer": "SHREYA SHARMA",
+    "acceptable_variants": ["SHREYA SHARMA (2023UGECO89)", "Shreya Sharma"],
+    "document_condition": "scanned",
+    "query_type": "table_lookup",
+    "notes": "General Secretary lookup in notice 2."
+  },
+  {
+    "query_id": "Q25",
+    "question": "Who is the Sports Secretary of the Student Council for 2026-27?",
+    "expected_document": "notice_2.pdf",
+    "expected_page": 1,
+    "expected_answer": "PRAKHAR ANAND",
+    "acceptable_variants": ["PRAKHAR ANAND (2023UGMM015)", "Prakhar Anand"],
+    "document_condition": "scanned",
+    "query_type": "table_lookup",
+    "notes": "Sports Secretary lookup in notice 2."
+  },
+  {
+    "query_id": "Q26",
+    "question": "Who is the Cultural Secretary of the Student Council for 2026-27?",
+    "expected_document": "notice_2.pdf",
+    "expected_page": 1,
+    "expected_answer": "ADITYA SINGH",
+    "acceptable_variants": ["ADITYA SINGH (2023UGCM013)", "Aditya Singh"],
+    "document_condition": "scanned",
+    "query_type": "table_lookup",
+    "notes": "Cultural Secretary lookup in notice 2."
+  },
+  {
+    "query_id": "Q27",
+    "question": "Who is the Technical Secretary of the Student Council for 2026-27?",
+    "expected_document": "notice_2.pdf",
+    "expected_page": 1,
+    "expected_answer": "ANUJ KUMAR",
+    "acceptable_variants": ["ANUJ KUMAR (2023UGMEO86)", "Anuj Kumar"],
+    "document_condition": "scanned",
+    "query_type": "table_lookup",
+    "notes": "Technical Secretary lookup in notice 2."
+  },
+  {
+    "query_id": "Q28",
+    "question": "Who is the Sponsoring Agency for the JRF Project in Electrical Engineering?",
+    "expected_document": "notice_7.pdf",
+    "expected_page": 1,
+    "expected_answer": "Anusandhan National Research Foundation (ANRF)",
+    "acceptable_variants": ["ANRF", "Anusandhan National Research Foundation"],
+    "document_condition": "structured_with_tables",
+    "query_type": "table_lookup",
+    "notes": "Sponsoring agency lookup."
   }
 ]

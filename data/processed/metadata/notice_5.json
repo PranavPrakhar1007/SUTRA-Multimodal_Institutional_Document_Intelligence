@@ -7,12 +7,12 @@
       "page_number": 1,
       "width": 541.0,
       "height": 830.0,
-      "image_path": "data\\processed\\pages\\notice_5\\page_1.png",
+      "image_path": "data/processed/pages/notice_5/page_1.png",
       "image_size_bytes": 1771274,
       "image_width": 1082,
       "image_height": 1660,
-      "text_path": "data\\processed\\text\\notice_5\\page_1.txt",
-      "text_length": 1680,
+      "text_path": "data/processed/text/notice_5/page_1.txt",
+      "text_length": 1679,
       "has_text": true,
       "word_count": 251,
       "text_preview": "",
@@ -170,7 +170,7 @@
             ]
           ],
           "text": "831014.",
-          "confidence": 0.7482
+          "confidence": 0.7656
         },
         {
           "box": [
@@ -192,7 +192,7 @@
             ]
           ],
           "text": "4RRT<_",
-          "confidence": 0.089
+          "confidence": 0.0916
         },
         {
           "box": [
@@ -412,7 +412,7 @@
             ]
           ],
           "text": "NATIONAL INSTITUTE OF TecHNOLOGY JAMSHEDPUR",
-          "confidence": 0.4775
+          "confidence": 0.4819
         },
         {
           "box": [
@@ -500,7 +500,7 @@
             ]
           ],
           "text": "(An Institution of National Importance under MoE,",
-          "confidence": 0.7413
+          "confidence": 0.7368
         },
         {
           "box": [
@@ -764,7 +764,7 @@
             ]
           ],
           "text": "in Full and Part-time modes (Autumn Semester 2026-27) through IAT",
-          "confidence": 0.6685
+          "confidence": 0.6638
         },
         {
           "box": [
@@ -1050,7 +1050,7 @@
             ]
           ],
           "text": "under",
-          "confidence": 0.6914
+          "confidence": 0.6762
         },
         {
           "box": [
@@ -1160,7 +1160,7 @@
             ]
           ],
           "text": "(Annexure-I) are hereby informed to report physically for their admission to M.Tech",
-          "confidence": 0.7086
+          "confidence": 0.7187
         },
         {
           "box": [
@@ -1380,7 +1380,7 @@
             ]
           ],
           "text": "Ncademic)",
-          "confidence": 0.3359
+          "confidence": 0.3386
         },
         {
           "box": [
@@ -1401,8 +1401,8 @@
               1047.0
             ]
           ],
-          "text": "Relvprks",
-          "confidence": 0.0283
+          "text": ")z/vp16",
+          "confidence": 0.0448
         },
         {
           "box": [
@@ -1490,7 +1490,7 @@
             ]
           ],
           "text": "Office of the Director for kind",
-          "confidence": 0.9944
+          "confidence": 0.9941
         },
         {
           "box": [
@@ -1512,7 +1512,7 @@
             ]
           ],
           "text": "informationa-ia #na #e17, #4yr",
-          "confidence": 0.0245
+          "confidence": 0.0216
         },
         {
           "box": [
@@ -1622,7 +1622,7 @@
             ]
           ],
           "text": "Jamshedour - 831014",
-          "confidence": 0.5751
+          "confidence": 0.6027
         },
         {
           "box": [
@@ -1776,7 +1776,7 @@
             ]
           ],
           "text": "DRIAR (Academic) , for information and needful action ,",
-          "confidence": 0.7671
+          "confidence": 0.7576
         },
         {
           "box": [
@@ -1820,7 +1820,7 @@
             ]
           ],
           "text": "AR (Finance & Accounts) , for information and needful action_",
-          "confidence": 0.6393
+          "confidence": 0.6458
         },
         {
           "box": [
@@ -2114,11 +2114,11 @@
       "page_number": 2,
       "width": 841.9,
       "height": 595.3,
-      "image_path": "data\\processed\\pages\\notice_5\\page_2.png",
+      "image_path": "data/processed/pages/notice_5/page_2.png",
       "image_size_bytes": 138567,
       "image_width": 1684,
       "image_height": 1191,
-      "text_path": "data\\processed\\text\\notice_5\\page_2.txt",
+      "text_path": "data/processed/text/notice_5/page_2.txt",
       "text_length": 982,
       "has_text": true,
       "word_count": 94,
@@ -2129,11 +2129,11 @@
       "page_number": 3,
       "width": 841.9,
       "height": 595.3,
-      "image_path": "data\\processed\\pages\\notice_5\\page_3.png",
+      "image_path": "data/processed/pages/notice_5/page_3.png",
       "image_size_bytes": 213539,
       "image_width": 1684,
       "image_height": 1191,
-      "text_path": "data\\processed\\text\\notice_5\\page_3.txt",
+      "text_path": "data/processed/text/notice_5/page_3.txt",
       "text_length": 1714,
       "has_text": true,
       "word_count": 148,
@@ -2144,11 +2144,11 @@
       "page_number": 4,
       "width": 841.9,
       "height": 595.3,
-      "image_path": "data\\processed\\pages\\notice_5\\page_4.png",
+      "image_path": "data/processed/pages/notice_5/page_4.png",
       "image_size_bytes": 209887,
       "image_width": 1684,
       "image_height": 1191,
-      "text_path": "data\\processed\\text\\notice_5\\page_4.txt",
+      "text_path": "data/processed/text/notice_5/page_4.txt",
       "text_length": 1721,
       "has_text": true,
       "word_count": 160,
@@ -2159,11 +2159,11 @@
       "page_number": 5,
       "width": 841.9,
       "height": 595.3,
-      "image_path": "data\\processed\\pages\\notice_5\\page_5.png",
+      "image_path": "data/processed/pages/notice_5/page_5.png",
       "image_size_bytes": 43070,
       "image_width": 1684,
       "image_height": 1191,
-      "text_path": "data\\processed\\text\\notice_5\\page_5.txt",
+      "text_path": "data/processed/text/notice_5/page_5.txt",
       "text_length": 279,
       "has_text": true,
       "word_count": 24,
@@ -2174,11 +2174,11 @@
       "page_number": 6,
       "width": 792.0,
       "height": 612.0,
-      "image_path": "data\\processed\\pages\\notice_5\\page_6.png",
+      "image_path": "data/processed/pages/notice_5/page_6.png",
       "image_size_bytes": 242257,
       "image_width": 1584,
       "image_height": 1224,
-      "text_path": "data\\processed\\text\\notice_5\\page_6.txt",
+      "text_path": "data/processed/text/notice_5/page_6.txt",
       "text_length": 2136,
       "has_text": true,
       "word_count": 241,
@@ -2189,11 +2189,11 @@
       "page_number": 7,
       "width": 792.0,
       "height": 612.0,
-      "image_path": "data\\processed\\pages\\notice_5\\page_7.png",
+      "image_path": "data/processed/pages/notice_5/page_7.png",
       "image_size_bytes": 111889,
       "image_width": 1584,
       "image_height": 1224,
-      "text_path": "data\\processed\\text\\notice_5\\page_7.txt",
+      "text_path": "data/processed/text/notice_5/page_7.txt",
       "text_length": 845,
       "has_text": true,
       "word_count": 106,
@@ -2204,11 +2204,11 @@
       "page_number": 8,
       "width": 792.0,
       "height": 612.0,
-      "image_path": "data\\processed\\pages\\notice_5\\page_8.png",
+      "image_path": "data/processed/pages/notice_5/page_8.png",
       "image_size_bytes": 138926,
       "image_width": 1584,
       "image_height": 1224,
-      "text_path": "data\\processed\\text\\notice_5\\page_8.txt",
+      "text_path": "data/processed/text/notice_5/page_8.txt",
       "text_length": 1055,
       "has_text": true,
       "word_count": 128,
@@ -2219,11 +2219,11 @@
       "page_number": 9,
       "width": 792.0,
       "height": 612.0,
-      "image_path": "data\\processed\\pages\\notice_5\\page_9.png",
+      "image_path": "data/processed/pages/notice_5/page_9.png",
       "image_size_bytes": 99957,
       "image_width": 1584,
       "image_height": 1224,
-      "text_path": "data\\processed\\text\\notice_5\\page_9.txt",
+      "text_path": "data/processed/text/notice_5/page_9.txt",
       "text_length": 630,
       "has_text": true,
       "word_count": 83,
@@ -2234,11 +2234,11 @@
       "page_number": 10,
       "width": 792.0,
       "height": 612.0,
-      "image_path": "data\\processed\\pages\\notice_5\\page_10.png",
+      "image_path": "data/processed/pages/notice_5/page_10.png",
       "image_size_bytes": 251233,
       "image_width": 1584,
       "image_height": 1224,
-      "text_path": "data\\processed\\text\\notice_5\\page_10.txt",
+      "text_path": "data/processed/text/notice_5/page_10.txt",
       "text_length": 2179,
       "has_text": true,
       "word_count": 286,
@@ -2249,11 +2249,11 @@
       "page_number": 11,
       "width": 792.0,
       "height": 612.0,
-      "image_path": "data\\processed\\pages\\notice_5\\page_11.png",
+      "image_path": "data/processed/pages/notice_5/page_11.png",
       "image_size_bytes": 195965,
       "image_width": 1584,
       "image_height": 1224,
-      "text_path": "data\\processed\\text\\notice_5\\page_11.txt",
+      "text_path": "data/processed/text/notice_5/page_11.txt",
       "text_length": 1894,
       "has_text": true,
       "word_count": 255,
@@ -2264,11 +2264,11 @@
       "page_number": 12,
       "width": 595.3,
       "height": 841.9,
-      "image_path": "data\\processed\\pages\\notice_5\\page_12.png",
+      "image_path": "data/processed/pages/notice_5/page_12.png",
       "image_size_bytes": 215069,
       "image_width": 1191,
       "image_height": 1684,
-      "text_path": "data\\processed\\text\\notice_5\\page_12.txt",
+      "text_path": "data/processed/text/notice_5/page_12.txt",
       "text_length": 1011,
       "has_text": true,
       "word_count": 110,
@@ -2279,11 +2279,11 @@
       "page_number": 13,
       "width": 588.0,
       "height": 804.0,
-      "image_path": "data\\processed\\pages\\notice_5\\page_13.png",
+      "image_path": "data/processed/pages/notice_5/page_13.png",
       "image_size_bytes": 2025846,
       "image_width": 1176,
       "image_height": 1608,
-      "text_path": "data\\processed\\text\\notice_5\\page_13.txt",
+      "text_path": "data/processed/text/notice_5/page_13.txt",
       "text_length": 1654,
       "has_text": true,
       "word_count": 253,
@@ -2332,7 +2332,7 @@
             ]
           ],
           "text": "MEDICAL CERTIFICATE",
-          "confidence": 0.8132
+          "confidence": 0.8143
         },
         {
           "box": [
@@ -2376,7 +2376,7 @@
             ]
           ],
           "text": "GENERAL EXPECTATONS",
-          "confidence": 0.6985
+          "confidence": 0.6934
         },
         {
           "box": [
@@ -2398,7 +2398,7 @@
             ]
           ],
           "text": "Candidates should have good general physique: In particular,",
-          "confidence": 0.6574
+          "confidence": 0.652
         },
         {
           "box": [
@@ -2441,8 +2441,8 @@
               336.0
             ]
           ],
-          "text": "Bnsiomisboula be normal: In case 0f defeclive vision , it should be correcled (0 6/9 in both eyes or 6/6 in lhe beller eye Colour blind",
-          "confidence": 0.1825
+          "text": "Insiomisboula be normal: In case 0f defeclive vision , it should be correcled (0 6/9 in both eyes or 6/6 in lhe beller eye Colour blind",
+          "confidence": 0.1879
         },
         {
           "box": [
@@ -2464,7 +2464,7 @@
             ]
           ],
           "text": "uni-ocular (having vision in only one",
-          "confidence": 0.8288
+          "confidence": 0.8292
         },
         {
           "box": [
@@ -2618,7 +2618,7 @@
             ]
           ],
           "text": "scar Or",
-          "confidence": 0.8335
+          "confidence": 0.8179
         },
         {
           "box": [
@@ -2662,7 +2662,7 @@
             ]
           ],
           "text": "Major illnessioperation, ifany (specify nalure of illnessloperation)",
-          "confidence": 0.3354
+          "confidence": 0.3416
         },
         {
           "box": [
@@ -2860,7 +2860,7 @@
             ]
           ],
           "text": "Hearing",
-          "confidence": 0.8063
+          "confidence": 0.8055
         },
         {
           "box": [
@@ -2992,7 +2992,7 @@
             ]
           ],
           "text": "Uniocular vision (having",
-          "confidence": 0.9763
+          "confidence": 0.9766
         },
         {
           "box": [
@@ -3014,7 +3014,7 @@
             ]
           ],
           "text": "vision in only one eye)",
-          "confidence": 0.7101
+          "confidence": 0.73
         },
         {
           "box": [
@@ -3146,7 +3146,7 @@
             ]
           ],
           "text": "Nervous System",
-          "confidence": 0.986
+          "confidence": 0.9866
         },
         {
           "box": [
@@ -3212,7 +3212,7 @@
             ]
           ],
           "text": "(b) Murmur",
-          "confidence": 0.8409
+          "confidence": 0.8383
         },
         {
           "box": [
@@ -3234,7 +3234,7 @@
             ]
           ],
           "text": "Abdomen",
-          "confidence": 0.9971
+          "confidence": 0.9969
         },
         {
           "box": [
@@ -3322,7 +3322,7 @@
             ]
           ],
           "text": "(b) Spleen",
-          "confidence": 0.6939
+          "confidence": 0.6877
         },
         {
           "box": [
@@ -3344,7 +3344,7 @@
             ]
           ],
           "text": "other defects:",
-          "confidence": 0.9945
+          "confidence": 0.9942
         },
         {
           "box": [
@@ -3366,7 +3366,7 @@
             ]
           ],
           "text": "Certificate of Medical Fitness",
-          "confidence": 0.7557
+          "confidence": 0.9556
         },
         {
           "box": [
@@ -3432,7 +3432,7 @@
             ]
           ],
           "text": "Uhet fordddaiescoed not fubilathe Prescribed standard of physical filnesslmedical filness and is unftllemporarily",
-          "confidence": 0.1454
+          "confidence": 0.1518
         },
         {
           "box": [
@@ -3660,12 +3660,12 @@
       "page_number": 14,
       "width": 547.0,
       "height": 830.0,
-      "image_path": "data\\processed\\pages\\notice_5\\page_14.png",
+      "image_path": "data/processed/pages/notice_5/page_14.png",
       "image_size_bytes": 1978522,
       "image_width": 1094,
       "image_height": 1660,
-      "text_path": "data\\processed\\text\\notice_5\\page_14.txt",
-      "text_length": 1688,
+      "text_path": "data/processed/text/notice_5/page_14.txt",
+      "text_length": 1689,
       "has_text": true,
       "word_count": 260,
       "text_preview": "",
@@ -3734,8 +3734,8 @@
               58.0
             ]
           ],
-          "text": "#efm virez TrrG",
-          "confidence": 0.0621
+          "text": "#efm virez TrrGY",
+          "confidence": 0.036
         },
         {
           "box": [
@@ -3823,7 +3823,7 @@
             ]
           ],
           "text": "JTRT",
-          "confidence": 0.4421
+          "confidence": 0.4513
         },
         {
           "box": [
@@ -3888,8 +3888,8 @@
               89.0
             ]
           ],
-          "text": "'TR",
-          "confidence": 0.1079
+          "text": "'IR",
+          "confidence": 0.1129
         },
         {
           "box": [
@@ -3999,7 +3999,7 @@
             ]
           ],
           "text": "47",
-          "confidence": 0.2216
+          "confidence": 0.2345
         },
         {
           "box": [
@@ -4021,7 +4021,7 @@
             ]
           ],
           "text": "HP\"TT)",
-          "confidence": 0.2315
+          "confidence": 0.2275
         },
         {
           "box": [
@@ -4065,7 +4065,7 @@
             ]
           ],
           "text": "NATIONAL iNstitute OF TechnOLOGY JAMSHEDPUR",
-          "confidence": 0.2948
+          "confidence": 0.298
         },
         {
           "box": [
@@ -4285,7 +4285,7 @@
             ]
           ],
           "text": "Documents to be submitted at the time of Physical Reporting for Admission to",
-          "confidence": 0.9146
+          "confidence": 0.9102
         },
         {
           "box": [
@@ -4329,7 +4329,7 @@
             ]
           ],
           "text": "SI No Details of Documents (Original for verification)",
-          "confidence": 0.4917
+          "confidence": 0.4859
         },
         {
           "box": [
@@ -4769,7 +4769,7 @@
             ]
           ],
           "text": "below the rank of SDO.",
-          "confidence": 0.9114
+          "confidence": 0.9115
         },
         {
           "box": [
@@ -4791,7 +4791,7 @@
             ]
           ],
           "text": "For OBC-NCL certificate issued on or after the 1st April 2026.",
-          "confidence": 0.7063
+          "confidence": 0.7084
         },
         {
           "box": [
@@ -4945,7 +4945,7 @@
             ]
           ],
           "text": "their employer:",
-          "confidence": 0.8591
+          "confidence": 0.8586
         },
         {
           "box": [
@@ -5033,7 +5033,7 @@
             ]
           ],
           "text": "Medical Fitness Certificate (Annexure-II)",
-          "confidence": 0.672
+          "confidence": 0.6716
         },
         {
           "box": [
@@ -5055,7 +5055,7 @@
             ]
           ],
           "text": "Dean'",
-          "confidence": 0.819
+          "confidence": 0.8144
         },
         {
           "box": [
@@ -5525,11 +5525,11 @@
       "page_number": 15,
       "width": 551.0,
       "height": 830.0,
-      "image_path": "data\\processed\\pages\\notice_5\\page_15.png",
+      "image_path": "data/processed/pages/notice_5/page_15.png",
       "image_size_bytes": 1998908,
       "image_width": 1102,
       "image_height": 1660,
-      "text_path": "data\\processed\\text\\notice_5\\page_15.txt",
+      "text_path": "data/processed/text/notice_5/page_15.txt",
       "text_length": 2449,
       "has_text": true,
       "word_count": 364,
@@ -5622,7 +5622,7 @@
             ]
           ],
           "text": "srGTr",
-          "confidence": 0.1077
+          "confidence": 0.1087
         },
         {
           "box": [
@@ -5754,7 +5754,7 @@
             ]
           ],
           "text": "VTR?",
-          "confidence": 0.2014
+          "confidence": 0.2013
         },
         {
           "box": [
@@ -5798,7 +5798,7 @@
             ]
           ],
           "text": "vear",
-          "confidence": 0.1265
+          "confidence": 0.124
         },
         {
           "box": [
@@ -5886,7 +5886,7 @@
             ]
           ],
           "text": "NATIONAL INSTITUTE OF TECHNOLOGY JAMSHEDPUR",
-          "confidence": 0.9301
+          "confidence": 0.9302
         },
         {
           "box": [
@@ -6018,7 +6018,7 @@
             ]
           ],
           "text": "of National Importance",
-          "confidence": 0.7854
+          "confidence": 0.791
         },
         {
           "box": [
@@ -6150,7 +6150,7 @@
             ]
           ],
           "text": "TheFee structurefor_Academic Session 2026-27 for MTech Full_time and Part-time candidate",
-          "confidence": 0.5751
+          "confidence": 0.5661
         },
         {
           "box": [
@@ -6260,7 +6260,7 @@
             ]
           ],
           "text": "Semester)",
-          "confidence": 0.8144
+          "confidence": 0.8029
         },
         {
           "box": [
@@ -6282,7 +6282,7 @@
             ]
           ],
           "text": "General, EWS &",
-          "confidence": 0.9379
+          "confidence": 0.94
         },
         {
           "box": [
@@ -6304,7 +6304,7 @@
             ]
           ],
           "text": "PWD",
-          "confidence": 0.9997
+          "confidence": 0.9998
         },
         {
           "box": [
@@ -6370,7 +6370,7 @@
             ]
           ],
           "text": "MTech (Full-",
-          "confidence": 0.7934
+          "confidence": 0.8221
         },
         {
           "box": [
@@ -6612,7 +6612,7 @@
             ]
           ],
           "text": "Time Payment)",
-          "confidence": 0.9788
+          "confidence": 0.9771
         },
         {
           "box": [
@@ -6678,7 +6678,7 @@
             ]
           ],
           "text": "Rs. 80000/-",
-          "confidence": 0.6587
+          "confidence": 0.6836
         },
         {
           "box": [
@@ -6964,7 +6964,7 @@
             ]
           ],
           "text": "The students of 2026 PG Batch who are Physically Reporting in the Institute as per the selected list are advised to follow",
-          "confidence": 0.6759
+          "confidence": 0.6713
         },
         {
           "box": [
@@ -7140,7 +7140,7 @@
             ]
           ],
           "text": "Select Branch as \"NIT Jamshedpur\" (Don't opt for NIT Jamshedpur PayDirect)",
-          "confidence": 0.818
+          "confidence": 0.8172
         },
         {
           "box": [
@@ -7206,7 +7206,7 @@
             ]
           ],
           "text": "When you arrive for the physical reporting process, remember to",
-          "confidence": 0.6299
+          "confidence": 0.6436
         },
         {
           "box": [
@@ -7294,7 +7294,7 @@
             ]
           ],
           "text": "Commencement of Classwork will be from",
-          "confidence": 0.9396
+          "confidence": 0.9397
         },
         {
           "box": [
@@ -7756,7 +7756,7 @@
             ]
           ],
           "text": "Email: dean ac@nitisr acin",
-          "confidence": 0.9473
+          "confidence": 0.9492
         },
         {
           "box": [
@@ -7800,7 +7800,7 @@
             ]
           ],
           "text": "Address: P.o. ~ NIT Jamshedpur, Adityapur, District- Saraikela kharsawan",
-          "confidence": 0.52
+          "confidence": 0.521
         },
         {
           "box": [
@@ -7962,11 +7962,11 @@
       "page_number": 16,
       "width": 579.0,
       "height": 818.0,
-      "image_path": "data\\processed\\pages\\notice_5\\page_16.png",
+      "image_path": "data/processed/pages/notice_5/page_16.png",
       "image_size_bytes": 2495964,
       "image_width": 1158,
       "image_height": 1636,
-      "text_path": "data\\processed\\text\\notice_5\\page_16.txt",
+      "text_path": "data/processed/text/notice_5/page_16.txt",
       "text_length": 1821,
       "has_text": true,
       "word_count": 282,
@@ -8147,7 +8147,7 @@
             ]
           ],
           "text": "'Iu",
-          "confidence": 0.1565
+          "confidence": 0.1532
         },
         {
           "box": [
@@ -8323,7 +8323,7 @@
             ]
           ],
           "text": "of Natlonal",
-          "confidence": 0.8093
+          "confidence": 0.8085
         },
         {
           "box": [
@@ -8609,7 +8609,7 @@
             ]
           ],
           "text": "SLno:",
-          "confidence": 0.4532
+          "confidence": 0.4543
         },
         {
           "box": [
@@ -8895,7 +8895,7 @@
             ]
           ],
           "text": "DASA WNon-CIWGHSAARCTSII",
-          "confidence": 0.3178
+          "confidence": 0.3086
         },
         {
           "box": [
@@ -9180,8 +9180,8 @@
               557.0
             ]
           ],
-          "text": "MCAMTech TFull vme)MDesMMBA",
-          "confidence": 0.2216
+          "text": "MCAMTech (Full vme)MDesMMBA",
+          "confidence": 0.2144
         },
         {
           "box": [
@@ -9247,7 +9247,7 @@
             ]
           ],
           "text": "35000",
-          "confidence": 0.7956
+          "confidence": 0.7569
         },
         {
           "box": [
@@ -9555,7 +9555,7 @@
             ]
           ],
           "text": "10000",
-          "confidence": 0.838
+          "confidence": 0.8425
         },
         {
           "box": [
@@ -9775,7 +9775,7 @@
             ]
           ],
           "text": "Placement (Alregular_UGPG)",
-          "confidence": 0.6438
+          "confidence": 0.6557
         },
         {
           "box": [
@@ -9885,7 +9885,7 @@
             ]
           ],
           "text": "Institute Fees per semester)",
-          "confidence": 0.8313
+          "confidence": 0.8302
         },
         {
           "box": [
@@ -9973,7 +9973,7 @@
             ]
           ],
           "text": "Examination",
-          "confidence": 0.6493
+          "confidence": 0.6414
         },
         {
           "box": [
@@ -10039,7 +10039,7 @@
             ]
           ],
           "text": "Bus Transport",
-          "confidence": 0.7395
+          "confidence": 0.7401
         },
         {
           "box": [
@@ -10215,7 +10215,7 @@
             ]
           ],
           "text": "Students Wellness and Welfare",
-          "confidence": 0.5881
+          "confidence": 0.5914
         },
         {
           "box": [
@@ -10259,7 +10259,7 @@
             ]
           ],
           "text": "3.7",
-          "confidence": 0.824
+          "confidence": 0.8241
         },
         {
           "box": [
@@ -10369,7 +10369,7 @@
             ]
           ],
           "text": "1500",
-          "confidence": 0.8849
+          "confidence": 0.8938
         },
         {
           "box": [
@@ -10611,7 +10611,7 @@
             ]
           ],
           "text": "Room Rent",
-          "confidence": 0.9697
+          "confidence": 0.9734
         },
         {
           "box": [
@@ -10985,7 +10985,7 @@
             ]
           ],
           "text": "20000",
-          "confidence": 0.9878
+          "confidence": 0.9872
         },
         {
           "box": [
@@ -11204,8 +11204,8 @@
               1493.0
             ]
           ],
-          "text": "NIT Jamshedpur, Adity3pur; DriG  Emaikela xharsawaist-3510",
-          "confidence": 0.1242
+          "text": "NIT Jamshedpur, Adityspur; DriG  Emaikela xharsawaist-3510",
+          "confidence": 0.1252
         },
         {
           "box": [
@@ -11271,7 +11271,7 @@
             ]
           ],
           "text": "831014 (Jharkhand)",
-          "confidence": 0.8652
+          "confidence": 0.8679
         },
         {
           "box": [

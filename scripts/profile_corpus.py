@@ -17,6 +17,9 @@ import json
 import sys
 from pathlib import Path
 
+project_root = Path(__file__).resolve().parent.parent
+sys.path.insert(0, str(project_root))
+
 if hasattr(sys.stdout, "reconfigure"):
     sys.stdout.reconfigure(encoding="utf-8")
 
@@ -158,13 +161,13 @@ def profile_document(pdf_path: Path, notice_id: str) -> dict:
 
 
 def main():
-    project_root = Path(__file__).resolve().parent.parent
-    raw_dir = project_root / "data" / "raw"
+    from backend.config import DOCUMENTS_DIR
 
-    pdfs = sorted(raw_dir.glob("notice_*.pdf"), key=lambda p: int(p.stem.split("_")[1]))
+    raw_dir = DOCUMENTS_DIR
+    pdfs = sorted(list(raw_dir.glob("*.pdf")))
 
     if not pdfs:
-        print("ERROR: No canonical PDFs found in data/raw/")
+        print(f"ERROR: No PDF documents found in {raw_dir}")
         return
 
     print(f"Profiling {len(pdfs)} documents...\n")

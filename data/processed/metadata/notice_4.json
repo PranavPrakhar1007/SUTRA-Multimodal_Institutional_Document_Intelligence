@@ -7,11 +7,11 @@
       "page_number": 1,
       "width": 578.2,
       "height": 824.4,
-      "image_path": "data\\processed\\pages\\notice_4\\page_1.png",
+      "image_path": "data/processed/pages/notice_4/page_1.png",
       "image_size_bytes": 801627,
       "image_width": 1157,
       "image_height": 1649,
-      "text_path": "data\\processed\\text\\notice_4\\page_1.txt",
+      "text_path": "data/processed/text/notice_4/page_1.txt",
       "text_length": 1116,
       "has_text": true,
       "word_count": 168,
@@ -82,7 +82,7 @@
             ]
           ],
           "text": "(An Institution of National Importance under Ministry",
-          "confidence": 0.9346
+          "confidence": 0.9325
         },
         {
           "box": [
@@ -104,7 +104,7 @@
             ]
           ],
           "text": "of Education, Govt: of India)",
-          "confidence": 0.6458
+          "confidence": 0.5305
         },
         {
           "box": [
@@ -148,7 +148,7 @@
             ]
           ],
           "text": "Student Activity Centre",
-          "confidence": 0.9423
+          "confidence": 0.9828
         },
         {
           "box": [
@@ -214,7 +214,7 @@
             ]
           ],
           "text": "Date: 20/08/2026",
-          "confidence": 0.9936
+          "confidence": 0.994
         },
         {
           "box": [
@@ -236,7 +236,7 @@
             ]
           ],
           "text": "NOTICE",
-          "confidence": 0.9929
+          "confidence": 0.9922
         },
         {
           "box": [
@@ -258,7 +258,7 @@
             ]
           ],
           "text": "This is to inform all students that the selection of Captains and Vice-Captains for all Games",
-          "confidence": 0.6853
+          "confidence": 0.7535
         },
         {
           "box": [
@@ -478,7 +478,7 @@
             ]
           ],
           "text": "NIT Jamshedpur",
-          "confidence": 0.9307
+          "confidence": 0.939
         },
         {
           "box": [
@@ -764,7 +764,7 @@
             ]
           ],
           "text": "9.",
-          "confidence": 0.4748
+          "confidence": 0.5195
         },
         {
           "box": [

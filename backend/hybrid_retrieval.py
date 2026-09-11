@@ -5,6 +5,7 @@ pipeline can be compared against the simple fusion approach.
 """
 
 from backend.config import HYBRID_RRF_K, HYBRID_RRF_TEXT_WEIGHT, HYBRID_RRF_VISUAL_WEIGHT
+from backend.query_constraints import constrain_candidates
 from backend.text_retrieval import TextIndex
 from backend.visual_retrieval import VisualIndex
 
@@ -53,8 +54,24 @@ class HybridRetriever:
             info = source_info.setdefault(key, {"text_rank": None, "visual_rank": None, "text_score": 0.0, "visual_score": 0.0})
             info["visual_rank"] = rank
             info["visual_score"] = float(result.get("score", 0.0))
+            result_map[key]["visual_score"] = float(result.get("score", 0.0))
 
-        ordered = sorted(rrf_scores, key=rrf_scores.get, reverse=True)[: max(1, int(top_k))]
+        candidates = [result_map[key] | {"score": float(rrf_scores[key])} for key in rrf_scores]
+        candidates, constraints = constrain_candidates(candidates, query)
+        allowed_keys = {f"{item['notice_id']}_p{item['page_number']}" for item in candidates}
+        if constraints.is_structured_lookup:
+            ordered = [
+                key for key in sorted(
+                    allowed_keys,
+                    key=lambda item: (
+                        result_map[item].get("visual_score", 0.0),
+                        rrf_scores[item],
+                    ),
+                    reverse=True,
+                )
+            ][: max(1, int(top_k))]
+        else:
+            ordered = [key for key in sorted(rrf_scores, key=rrf_scores.get, reverse=True) if key in allowed_keys][: max(1, int(top_k))]
         results = []
         for key in ordered:
             entry = result_map[key].copy()
@@ -65,6 +82,7 @@ class HybridRetriever:
                 "text_weight": text_weight,
                 "visual_weight": visual_weight,
                 "rrf_k": rrf_k,
+                "constraint_matches": bool(constraints.has_explicit_constraints),
             }
             results.append(entry)
         return results

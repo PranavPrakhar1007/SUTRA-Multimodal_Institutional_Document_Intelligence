@@ -7,11 +7,11 @@
       "page_number": 1,
       "width": 595.3,
       "height": 841.9,
-      "image_path": "data\\processed\\pages\\notice_1\\page_1.png",
+      "image_path": "data/processed/pages/notice_1/page_1.png",
       "image_size_bytes": 1083390,
       "image_width": 1191,
       "image_height": 1684,
-      "text_path": "data\\processed\\text\\notice_1\\page_1.txt",
+      "text_path": "data/processed/text/notice_1/page_1.txt",
       "text_length": 1633,
       "has_text": true,
       "word_count": 245,
@@ -82,7 +82,7 @@
             ]
           ],
           "text": "National Institute of Technology Jamshedpur",
-          "confidence": 0.9331
+          "confidence": 0.9329
         },
         {
           "box": [
@@ -148,7 +148,7 @@
             ]
           ],
           "text": "(An Institution of National Importance under MoE, Govt: of India)",
-          "confidence": 0.7071
+          "confidence": 0.7126
         },
         {
           "box": [
@@ -192,7 +192,7 @@
             ]
           ],
           "text": "Dated: 16./08 /2026",
-          "confidence": 0.6875
+          "confidence": 0.6968
         },
         {
           "box": [
@@ -214,7 +214,7 @@
             ]
           ],
           "text": "Selection Committee for the Formation of Student's Council 2026-2027",
-          "confidence": 0.6579
+          "confidence": 0.6524
         },
         {
           "box": [
@@ -236,7 +236,7 @@
             ]
           ],
           "text": "By the approval of the competent authority, The Composition of the Selection committee of the",
-          "confidence": 0.7142
+          "confidence": 0.7164
         },
         {
           "box": [
@@ -258,7 +258,7 @@
             ]
           ],
           "text": "formation of the Students' Council for the session 2026-2027 has bzen duly constituted. The",
-          "confidence": 0.7144
+          "confidence": 0.7164
         },
         {
           "box": [
@@ -280,7 +280,7 @@
             ]
           ],
           "text": "Committee comprises the following esteemed members.",
-          "confidence": 0.8201
+          "confidence": 0.8165
         },
         {
           "box": [
@@ -324,7 +324,7 @@
             ]
           ],
           "text": "Chairman",
-          "confidence": 0.7116
+          "confidence": 0.7376
         },
         {
           "box": [
@@ -654,7 +654,7 @@
             ]
           ],
           "text": "Associate Dean (SW) _ Nominate by Dean (SW) ~ Dr. Kanika Prasad",
-          "confidence": 0.5613
+          "confidence": 0.5494
         },
         {
           "box": [
@@ -786,7 +786,7 @@
             ]
           ],
           "text": "each from Cultural, Technical and Sports",
-          "confidence": 0.6374
+          "confidence": 0.6241
         },
         {
           "box": [
@@ -896,7 +896,7 @@
             ]
           ],
           "text": "One Special Invite",
-          "confidence": 0.9727
+          "confidence": 0.9739
         },
         {
           "box": [
@@ -1006,7 +1006,7 @@
             ]
           ],
           "text": "The committee shall oversee the process of nomination, evaluation, and the selection of eligible",
-          "confidence": 0.5949
+          "confidence": 0.6776
         },
         {
           "box": [
@@ -1050,7 +1050,7 @@
             ]
           ],
           "text": "adherence to institutional norms and values_",
-          "confidence": 0.774
+          "confidence": 0.7928
         },
         {
           "box": [
@@ -1182,7 +1182,7 @@
             ]
           ],
           "text": "Prol. Ashok E",
-          "confidence": 0.1688
+          "confidence": 0.1687
         },
         {
           "box": [
@@ -1292,7 +1292,7 @@
             ]
           ],
           "text": "dean sw@nitjsr.ac.in",
-          "confidence": 0.9015
+          "confidence": 0.8992
         },
         {
           "box": [

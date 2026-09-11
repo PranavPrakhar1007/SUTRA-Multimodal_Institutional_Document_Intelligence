@@ -10,7 +10,7 @@ from typing import Any, Dict, List, Optional, Tuple
 import numpy as np
 from PIL import Image
 
-from backend.config import RAW_DIR, VISUAL_RERANK_DPI
+from backend.config import DOCUMENTS_DIR, VISUAL_RERANK_DPI
 from backend.path_utils import resolve_page_image
 from backend.visual_retrieval import _get_colpali
 
@@ -19,38 +19,99 @@ class VisualReranker:
     def __init__(self, tile_grid: Tuple[int, int] = (2, 2), overlap: float = 0.2):
         self.tile_grid = tile_grid
         self.overlap = overlap
+        self._render_cache: Dict[Tuple[str, int, int, int, int], Image.Image] = {}
+
+    def _page_key(self, page_path: str, page_number: int, dpi: int, width: int, height: int) -> Tuple[str, int, int, int, int]:
+        return (str(page_path), int(page_number), int(dpi), int(width), int(height))
+
+    def _render_page_image(self, notice_id: str, page_number: int, resolved: Optional[str] = None) -> Optional[Image.Image]:
+        """Return a cached high-resolution page render for the same PDF/image across repeated queries."""
+        pdf_path = DOCUMENTS_DIR / f"{notice_id}.pdf"
+        cache_key = None
+
+        if pdf_path.exists():
+            try:
+                import os
+                import pymupdf as fitz
+                stat = pdf_path.stat()
+                cache_key = self._page_key(str(pdf_path), page_number, VISUAL_RERANK_DPI, int(stat.st_size), int(stat.st_mtime_ns))
+                if cache_key in self._render_cache:
+                    return self._render_cache[cache_key]
+                with fitz.open(str(pdf_path)) as doc:
+                    if 1 <= page_number <= len(doc):
+                        page_obj = doc[page_number - 1]
+                        zoom = VISUAL_RERANK_DPI / 72.0
+                        mat = fitz.Matrix(zoom, zoom)
+                        pix = page_obj.get_pixmap(matrix=mat, alpha=False)
+                        image = Image.frombytes("RGB", [pix.width, pix.height], pix.samples)
+                        self._render_cache[cache_key] = image
+                        return image
+            except Exception:
+                pass
+
+        if resolved is not None:
+            try:
+                stat = Path(resolved).stat()
+                cache_key = self._page_key(str(resolved), page_number, VISUAL_RERANK_DPI, int(stat.st_size), int(stat.st_mtime_ns))
+                if cache_key in self._render_cache:
+                    return self._render_cache[cache_key]
+                with Image.open(resolved) as src:
+                    page_img = src.convert("RGB")
+                    scale = VISUAL_RERANK_DPI / 144.0
+                    new_size = (max(1, round(page_img.width * scale)), max(1, round(page_img.height * scale)))
+                    image = page_img.resize(new_size, Image.Resampling.LANCZOS)
+                    self._render_cache[cache_key] = image
+                    return image
+            except Exception:
+                return None
+        return None
 
     def _extract_tiles(self, image: Image.Image) -> List[Tuple[str, Image.Image, Tuple[int, int, int, int]]]:
-        """Return (label, image, box) using original image coordinates with overlap."""
+        """Return general-purpose region crops that preserve document structure better than fixed quadrants alone."""
         width, height = image.size
-        tiles: List[Tuple[str, Image.Image, Tuple[int, int, int, int]]] = [
-            ("full_page", image, (0, 0, width, height))
-        ]
+        rows, columns = self.tile_grid
+        rows = max(1, int(rows))
+        columns = max(1, int(columns))
+        tiles: List[Tuple[str, Image.Image, Tuple[int, int, int, int]]] = [("full_page", image, (0, 0, width, height))]
+        tile_width = width / columns
+        tile_height = height / rows
 
-        rows, cols = self.tile_grid
-        base_w = width / cols
-        base_h = height / rows
-        ov_w = int(base_w * self.overlap)
-        ov_h = int(base_h * self.overlap)
+        # Keep the first pass coarse, but also include horizontal and vertical bands so
+        # table headers and row labels remain in focus on dense document pages.
+        for row in range(rows):
+            for column in range(columns):
+                x0 = max(0, int((column - self.overlap / 2) * tile_width))
+                y0 = max(0, int((row - self.overlap / 2) * tile_height))
+                x1 = min(width, int((column + 1 + self.overlap / 2) * tile_width))
+                y1 = min(height, int((row + 1 + self.overlap / 2) * tile_height))
+                box = (x0, y0, max(x0 + 1, x1), max(y0 + 1, y1))
+                label = f"grid_r{row + 1}_c{column + 1}"
+                tiles.append((label, image.crop(box), box))
 
-        for r in range(rows):
-            for c in range(cols):
-                x0 = max(0, int(c * base_w) - ov_w)
-                x1 = min(width, int((c + 1) * base_w) + ov_w)
-                y0 = max(0, int(r * base_h) - ov_h)
-                y1 = min(height, int((r + 1) * base_h) + ov_h)
-                box = (x0, y0, x1, y1)
-                tiles.append((f"grid_{r}_{c}", image.crop(box), box))
+        if rows >= 2:
+            band_h = max(1, height // 3)
+            for index, y0 in enumerate((0, height // 2 - band_h // 2, max(0, height - band_h))):
+                box = (0, y0, width, min(height, y0 + band_h))
+                label = f"band_h{index + 1}"
+                tiles.append((label, image.crop(box), box))
 
-        bands = [
-            ("upper_half", (0, 0, width, min(height, int(height * 0.55)))),
-            ("middle_half", (0, int(height * 0.22), width, int(height * 0.78))),
-            ("lower_half", (0, int(height * 0.45), width, height)),
-        ]
-        for label, box in bands:
-            tiles.append((label, image.crop(box), box))
+        if columns >= 2:
+            band_w = max(1, width // 3)
+            for index, x0 in enumerate((0, width // 2 - band_w // 2, max(0, width - band_w))):
+                box = (x0, 0, min(width, x0 + band_w), height)
+                label = f"band_v{index + 1}"
+                tiles.append((label, image.crop(box), box))
 
-        return tiles
+        # Deduplicate exact same crop box while preserving the first-seen label.
+        seen = set()
+        unique_tiles: List[Tuple[str, Image.Image, Tuple[int, int, int, int]]] = []
+        for label, tile_img, box in tiles:
+            key = tuple(box)
+            if key in seen:
+                continue
+            seen.add(key)
+            unique_tiles.append((label, tile_img, box))
+        return unique_tiles
 
     def score_candidates(
         self,
@@ -59,6 +120,7 @@ class VisualReranker:
         top_k: int = 5,
         candidate_ids: Optional[Any] = None,
         visual_index: Optional[Any] = None,
+        cancel_event: Optional[Any] = None,
     ) -> List[Dict[str, Any]]:
         cands = candidates if candidates is not None else (candidate_ids if isinstance(candidate_ids, list) else None)
         if cands is None and visual_index is not None:
@@ -76,34 +138,26 @@ class VisualReranker:
         reranked: List[Dict[str, Any]] = []
 
         for candidate in cands:
+            if cancel_event is not None and cancel_event.is_set():
+                break
             notice_id = candidate.get("notice_id", candidate.get("doc_id", ""))
             page_number = int(candidate.get("page_number", candidate.get("page", 1)))
             resolved = resolve_page_image(notice_id, page_number, candidate.get("image_path", ""))
-
-            high_res = None
-            pdf_path = RAW_DIR / f"{notice_id}.pdf"
-            if pdf_path.exists():
+            high_res = self._render_page_image(notice_id, page_number, resolved)
+            if high_res is None:
                 try:
-                    import fitz
-                    with fitz.open(str(pdf_path)) as doc:
-                        if 1 <= page_number <= len(doc):
-                            page_obj = doc[page_number - 1]
-                            zoom = VISUAL_RERANK_DPI / 72.0
-                            mat = fitz.Matrix(zoom, zoom)
-                            pix = page_obj.get_pixmap(matrix=mat, alpha=False)
-                            high_res = Image.frombytes("RGB", [pix.width, pix.height], pix.samples)
+                    import pymupdf as fitz
+                    pdf_path = DOCUMENTS_DIR / f"{notice_id}.pdf"
+                    if pdf_path.exists():
+                        with fitz.open(str(pdf_path)) as doc:
+                            if 1 <= page_number <= len(doc):
+                                page_obj = doc[page_number - 1]
+                                zoom = VISUAL_RERANK_DPI / 72.0
+                                mat = fitz.Matrix(zoom, zoom)
+                                pix = page_obj.get_pixmap(matrix=mat, alpha=False)
+                                high_res = Image.frombytes("RGB", [pix.width, pix.height], pix.samples)
                 except Exception as e:
                     print(f"PyMuPDF 216 DPI render error for {pdf_path} p{page_number}: {e}")
-
-            if high_res is None and resolved is not None:
-                try:
-                    with Image.open(resolved) as src:
-                        page_img = src.convert("RGB")
-                        scale = VISUAL_RERANK_DPI / 144.0
-                        new_size = (max(1, round(page_img.width * scale)), max(1, round(page_img.height * scale)))
-                        high_res = page_img.resize(new_size, Image.Resampling.LANCZOS)
-                except Exception:
-                    high_res = None
 
             if high_res is None:
                 entry = candidate.copy()

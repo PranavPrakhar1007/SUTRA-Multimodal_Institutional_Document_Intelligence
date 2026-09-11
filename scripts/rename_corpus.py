@@ -43,8 +43,8 @@ def main():
         print("ERROR: No PDF files found in Sample directory.")
         return
 
-    # --- Create data/raw/ directory ---
-    raw_dir = project_root / "data" / "raw"
+    # --- Create data/documents/ directory ---
+    raw_dir = project_root / "data" / "documents"
     raw_dir.mkdir(parents=True, exist_ok=True)
 
     # --- Copy and rename ---

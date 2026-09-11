@@ -29,9 +29,8 @@ def run_ocr():
     total_preserved = 0
     total_failed = 0
 
-    for notice_dir in sorted(PAGES_DIR.glob("notice_*"), key=lambda p: int(p.name.split("_")[1])):
-        if not notice_dir.is_dir():
-            continue
+    doc_dirs = sorted([p for p in PAGES_DIR.iterdir() if p.is_dir()], key=lambda p: p.name)
+    for notice_dir in doc_dirs:
         notice_id = notice_dir.name
         text_dir = TEXT_DIR / notice_id
         text_dir.mkdir(parents=True, exist_ok=True)
@@ -104,7 +103,7 @@ def run_ocr():
 
     # Rebuild the combined metadata so there is no stale all_documents.json after OCR.
     combined = []
-    for meta_file in sorted(METADATA_DIR.glob("notice_*.json"), key=lambda p: int(p.stem.split("_")[1])):
+    for meta_file in sorted([f for f in METADATA_DIR.glob("*.json") if f.name != "all_documents.json"]):
         combined.append(json.loads(meta_file.read_text(encoding="utf-8")))
     combined_path = TEXT_DIR.parent / "all_documents.json"
     combined_path.write_text(json.dumps(combined, indent=2, ensure_ascii=False), encoding="utf-8")

@@ -3,9 +3,12 @@
 import os
 from pathlib import Path
 
+from dotenv import load_dotenv
+
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
+load_dotenv(PROJECT_ROOT / ".env")
 DATA_DIR = PROJECT_ROOT / "data"
-RAW_DIR = DATA_DIR / "raw"
+DOCUMENTS_DIR = DATA_DIR / "documents"  # Subfolder inside data/ holding actual PDFs from the outside world
 PROCESSED_DIR = DATA_DIR / "processed"
 PAGES_DIR = PROCESSED_DIR / "pages"
 TEXT_DIR = PROCESSED_DIR / "text"
@@ -13,6 +16,7 @@ METADATA_DIR = PROCESSED_DIR / "metadata"
 EMBEDDINGS_DIR = DATA_DIR / "embeddings"
 EVALUATION_DIR = DATA_DIR / "evaluation"
 
+DOCUMENTS_DIR.mkdir(parents=True, exist_ok=True)
 EMBEDDINGS_DIR.mkdir(parents=True, exist_ok=True)
 
 # Local retrieval models.
@@ -32,6 +36,8 @@ KEYS_FILE = DATA_DIR / "keys.json"
 
 def load_persistent_keys():
     global GROQ_API_KEY
+    if GROQ_API_KEY.strip():
+        return
     if KEYS_FILE.exists():
         try:
             import json
@@ -61,6 +67,7 @@ HYBRID_RRF_K = 60
 
 # Improved Hybrid candidate union.
 HYBRID_CANDIDATE_UNION_SIZE = 10
+HYBRID_VISUAL_RERANK_SIZE = 2
 VISUAL_RERANK_CANDIDATE_SIZE = 10
 
 # Text BM25 dominance heuristics.
@@ -73,9 +80,9 @@ PAGE_IMAGE_DPI = 144
 VISUAL_RERANK_DPI = 216
 
 # Generation / transport.
-GENERATION_MAX_TOKENS = 500
+GENERATION_MAX_TOKENS = 250
 GENERATION_TEMPERATURE = 0.0
-OPENAI_REQUEST_TIMEOUT_SECONDS = 60
+OPENAI_REQUEST_TIMEOUT_SECONDS = 10
 
 RETRIEVAL_REJECTION_THRESHOLD = 0.0
 

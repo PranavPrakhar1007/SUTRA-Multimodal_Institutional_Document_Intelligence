@@ -1,5 +1,5 @@
 {
-  "total_documents": 7,
+  "total_documents": 8,
   "documents": [
     {
       "notice_id": "notice_1",
@@ -709,13 +709,122 @@
       },
       "page_count": 4,
       "processing_status": "profiled"
+    },
+    {
+      "notice_id": "Time Table Autumn Semester 26 -27",
+      "canonical_filename": "Time Table Autumn Semester 26 -27.pdf",
+      "file_size_bytes": 2792080,
+      "pages": [
+        {
+          "page_number": 1,
+          "width": 595,
+          "height": 842,
+          "text_length": 0,
+          "has_text": false,
+          "word_count": 0,
+          "table_count": 0,
+          "has_tables": false,
+          "image_count": 1,
+          "has_images": true,
+          "line_count": 0,
+          "rect_count": 0,
+          "has_visual_structure": false,
+          "scan_status": "likely_scanned",
+          "text_preview": ""
+        },
+        {
+          "page_number": 2,
+          "width": 595,
+          "height": 842,
+          "text_length": 0,
+          "has_text": false,
+          "word_count": 0,
+          "table_count": 0,
+          "has_tables": false,
+          "image_count": 1,
+          "has_images": true,
+          "line_count": 0,
+          "rect_count": 0,
+          "has_visual_structure": false,
+          "scan_status": "likely_scanned",
+          "text_preview": ""
+        },
+        {
+          "page_number": 3,
+          "width": 595,
+          "height": 842,
+          "text_length": 0,
+          "has_text": false,
+          "word_count": 0,
+          "table_count": 0,
+          "has_tables": false,
+          "image_count": 1,
+          "has_images": true,
+          "line_count": 0,
+          "rect_count": 0,
+          "has_visual_structure": false,
+          "scan_status": "likely_scanned",
+          "text_preview": ""
+        },
+        {
+          "page_number": 4,
+          "width": 595,
+          "height": 842,
+          "text_length": 0,
+          "has_text": false,
+          "word_count": 0,
+          "table_count": 0,
+          "has_tables": false,
+          "image_count": 1,
+          "has_images": true,
+          "line_count": 0,
+          "rect_count": 0,
+          "has_visual_structure": false,
+          "scan_status": "likely_scanned",
+          "text_preview": ""
+        },
+        {
+          "page_number": 5,
+          "width": 595,
+          "height": 842,
+          "text_length": 0,
+          "has_text": false,
+          "word_count": 0,
+          "table_count": 0,
+          "has_tables": false,
+          "image_count": 1,
+          "has_images": true,
+          "line_count": 0,
+          "rect_count": 0,
+          "has_visual_structure": false,
+          "scan_status": "likely_scanned",
+          "text_preview": ""
+        }
+      ],
+      "summary": {
+        "page_count": 5,
+        "total_text_characters": 0,
+        "total_tables": 0,
+        "total_images": 5,
+        "text_pages": 0,
+        "scanned_pages": 5,
+        "pages_with_tables": 0,
+        "pages_with_visual_structure": 0,
+        "text_availability": "none",
+        "has_tables": false,
+        "has_scanned_content": true,
+        "visual_complexity": "low",
+        "document_condition": "scanned"
+      },
+      "page_count": 5,
+      "processing_status": "profiled"
     }
   ],
   "corpus_summary": {
-    "total_documents": 7,
-    "total_pages": 25,
+    "total_documents": 8,
+    "total_pages": 30,
     "documents_with_tables": 2,
-    "documents_with_scanned_content": 6,
+    "documents_with_scanned_content": 7,
     "document_conditions": [
       "scanned",
       "scanned",
@@ -723,7 +832,8 @@
       "scanned",
       "mixed_scan_digital",
       "scanned",
-      "structured_with_tables"
+      "structured_with_tables",
+      "scanned"
     ]
   }
 }

@@ -1,5 +1,5 @@
 {
-  "index_type": "colpali_vlm",
-  "model": "vidore/colpali-v1.2",
-  "entry_count": 25
+  "index_type": "colqwen2_vlm",
+  "model": "vidore/colqwen2-v1.0",
+  "entry_count": 30
 }

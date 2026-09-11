@@ -1,9 +1,10 @@
 from typing import Any, Dict, List
 
-from backend.config import HYBRID_CANDIDATE_UNION_SIZE, HYBRID_RRF_K
+from backend.config import HYBRID_CANDIDATE_UNION_SIZE, HYBRID_RRF_K, HYBRID_VISUAL_RERANK_SIZE
 from backend.text_retrieval import TextIndex
 from backend.visual_reranker import VisualReranker
 from backend.visual_retrieval import VisualIndex
+from backend.query_constraints import constrain_candidates
 
 
 class HybridRerankedRetriever:
@@ -23,11 +24,16 @@ class HybridRerankedRetriever:
         query: str,
         top_k: int = 5,
         candidate_union_size: int | None = None,
+        cancel_event: Any | None = None,
     ) -> List[Dict[str, Any]]:
         union_size = HYBRID_CANDIDATE_UNION_SIZE if candidate_union_size is None else max(1, int(candidate_union_size))
 
         text_candidates = self.text_index.search(query, top_k=union_size)
+        if cancel_event is not None and cancel_event.is_set():
+            return []
         visual_candidates = self.visual_index.search(query, top_k=union_size)
+        if cancel_event is not None and cancel_event.is_set():
+            return []
 
         merged: Dict[str, Dict[str, Any]] = {}
         for rank, c in enumerate(text_candidates, start=1):
@@ -59,10 +65,34 @@ class HybridRerankedRetriever:
         if not candidates:
             return []
 
-        # Invoke fine-grained multi-scale VisualReranker over candidate union
+        candidates, constraints = constrain_candidates(candidates, query)
+
+        # Sort candidates by preliminary combined score before fine-grained visual reranking
+        if constraints.is_structured_lookup:
+            candidates.sort(
+                key=lambda x: (
+                    x.get("visual_rank") is not None,
+                    -int(x.get("visual_rank") or 10**9),
+                    float(x.get("colpali_score", 0.0)),
+                ),
+                reverse=True,
+            )
+        else:
+            candidates.sort(
+                key=lambda x: 0.5 * float(x.get("text_rrf", 0.0)) + 0.5 * float(x.get("visual_rrf", 0.0)) + 0.1 * float(x.get("colpali_score", 0.0)),
+                reverse=True,
+            )
+
+        # Rerank the complete candidate union.  Structured table questions are
+        # often absent from OCR, so truncating before visual reranking can
+        # permanently discard the only page containing the answer.
+        top_candidates_to_rerank = candidates[:HYBRID_VISUAL_RERANK_SIZE]
         try:
             reranked_visual = self.visual_reranker.score_candidates(
-                query, candidates=candidates, top_k=len(candidates)
+                query,
+                candidates=top_candidates_to_rerank,
+                top_k=len(top_candidates_to_rerank),
+                cancel_event=cancel_event,
             )
             reranked_lookup = {
                 f"{r['notice_id']}_p{r['page_number']}": r
@@ -84,13 +114,15 @@ class HybridRerankedRetriever:
             # Normalize v_score (typical ColPali scores range ~0..25)
             v_norm = min(1.0, max(0.0, v_score / 25.0)) if v_score > 0 else 0.0
 
-            # Score fusion: text anchor + visual RRF + fine-grained visual score
-            if text_rrf > 0 and visual_rrf > 0:
-                combined = 0.50 * text_rrf + 0.35 * visual_rrf + 0.15 * v_norm
+            # Score fusion with visual dominance scaling when visual MaxSim alignment is strong (>10.0)
+            if v_score > 10.0:
+                combined = 0.60 * v_norm + 0.25 * visual_rrf + 0.15 * text_rrf
+            elif text_rrf > 0 and visual_rrf > 0:
+                combined = 0.40 * text_rrf + 0.40 * visual_rrf + 0.20 * v_norm
             elif text_rrf > 0:
-                combined = 0.85 * text_rrf
+                combined = 0.70 * text_rrf + 0.30 * v_norm
             else:
-                combined = 0.70 * visual_rrf + 0.30 * v_norm
+                combined = 0.60 * visual_rrf + 0.40 * v_norm
 
             result = entry.copy()
             if v_info:
@@ -107,6 +139,7 @@ class HybridRerankedRetriever:
                 "visual_rrf": round(visual_rrf, 4),
                 "visual_rerank_score": round(v_score, 4),
                 "combined_score": round(combined, 4),
+                "constraint_matches": bool(constraints.has_explicit_constraints),
             }
             result["evidence_signal"] = round(combined, 4)
             final_results.append(result)

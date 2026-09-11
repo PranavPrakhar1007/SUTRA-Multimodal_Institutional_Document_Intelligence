@@ -7,11 +7,11 @@
       "page_number": 1,
       "width": 595.2,
       "height": 841.7,
-      "image_path": "data\\processed\\pages\\notice_2\\page_1.png",
+      "image_path": "data/processed/pages/notice_2/page_1.png",
       "image_size_bytes": 799343,
       "image_width": 1191,
       "image_height": 1684,
-      "text_path": "data\\processed\\text\\notice_2\\page_1.txt",
+      "text_path": "data/processed/text/notice_2/page_1.txt",
       "text_length": 1596,
       "has_text": true,
       "word_count": 217,
@@ -60,7 +60,7 @@
             ]
           ],
           "text": "831014 HR&s",
-          "confidence": 0.3826
+          "confidence": 0.3825
         },
         {
           "box": [
@@ -82,7 +82,7 @@
             ]
           ],
           "text": "NATIONAL INSTITUTE OF TECHNOLOGY",
-          "confidence": 0.9796
+          "confidence": 0.8644
         },
         {
           "box": [
@@ -192,7 +192,7 @@
             ]
           ],
           "text": "Office of the Dean (Students' Welfare)",
-          "confidence": 0.6167
+          "confidence": 0.6227
         },
         {
           "box": [
@@ -478,7 +478,7 @@
             ]
           ],
           "text": "committee for students' council for the academic session 2026-27:",
-          "confidence": 0.8613
+          "confidence": 0.8701
         },
         {
           "box": [
@@ -632,7 +632,7 @@
             ]
           ],
           "text": "SRINIWAS PRASAD",
-          "confidence": 0.7511
+          "confidence": 0.7555
         },
         {
           "box": [
@@ -720,7 +720,7 @@
             ]
           ],
           "text": "FEMALE",
-          "confidence": 0.9993
+          "confidence": 0.9991
         },
         {
           "box": [
@@ -874,7 +874,7 @@
             ]
           ],
           "text": "CULTURAL SECRETARY",
-          "confidence": 0.9649
+          "confidence": 0.9779
         },
         {
           "box": [
@@ -940,7 +940,7 @@
             ]
           ],
           "text": "2023UGCMO13",
-          "confidence": 0.9168
+          "confidence": 0.9131
         },
         {
           "box": [
@@ -1446,7 +1446,7 @@
             ]
           ],
           "text": "JJONNT CULTURAL SECRETARY",
-          "confidence": 0.51
+          "confidence": 0.5042
         },
         {
           "box": [
@@ -1754,7 +1754,7 @@
             ]
           ],
           "text": "2024UGCEO3]",
-          "confidence": 0.6696
+          "confidence": 0.665
         },
         {
           "box": [
@@ -1842,7 +1842,7 @@
             ]
           ],
           "text": "SANIYA JAMAL",
-          "confidence": 0.6797
+          "confidence": 0.9795
         },
         {
           "box": [
@@ -1864,7 +1864,7 @@
             ]
           ],
           "text": "2024UGECO86",
-          "confidence": 0.7165
+          "confidence": 0.7223
         },
         {
           "box": [
@@ -1996,7 +1996,7 @@
             ]
           ],
           "text": "OPEN",
-          "confidence": 0.8884
+          "confidence": 0.8903
         },
         {
           "box": [
@@ -2150,7 +2150,7 @@
             ]
           ],
           "text": "JOINT ALUMNI SECRETARY",
-          "confidence": 0.7478
+          "confidence": 0.7447
         },
         {
           "box": [
@@ -2414,7 +2414,7 @@
             ]
           ],
           "text": "2025PGPHPH33",
-          "confidence": 0.9311
+          "confidence": 0.9793
         },
         {
           "box": [

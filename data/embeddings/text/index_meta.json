@@ -1,6 +1,6 @@
 {
   "index_type": "text_rrf",
   "model": "all-MiniLM-L6-v2",
-  "entry_count": 25,
+  "entry_count": 30,
   "embedding_dimension": 384
 }

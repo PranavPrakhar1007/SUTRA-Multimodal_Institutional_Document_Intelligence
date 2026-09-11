@@ -10,22 +10,52 @@ export default function App() {
   const [comparison, setComparison] = useState(null)
   const [loading, setLoading] = useState(false)
   const [loadingStep, setLoadingStep] = useState(1)
+  const [loadingAction, setLoadingAction] = useState(null)
+  const [loadingMode, setLoadingMode] = useState(mode)
   const [documents, setDocuments] = useState([])
   const [selectedEvidence, setSelectedEvidence] = useState(null)
   
-  // API Key state
-  const [apiKey, setApiKey] = useState(localStorage.getItem('llm_api_key') || '')
-  const [apiKeySaved, setApiKeySaved] = useState(!!localStorage.getItem('llm_api_key'))
-  const [apiProvider, setApiProvider] = useState(localStorage.getItem('llm_provider') || 'groq')
-  const [apiKeyEditing, setApiKeyEditing] = useState(false)
   const [health, setHealth] = useState(null)
   
   // Modals & Toasts
   const [docModal, setDocModal] = useState(null)
+  const [lightboxImage, setLightboxImage] = useState(null)
+  const [lightboxRotation, setLightboxRotation] = useState(0)
   const [toastMessage, setToastMessage] = useState('')
-  const toastTimeoutRef = useRef(null)
+  // Inline Document Viewer State
+  const [inlineZoom, setInlineZoom] = useState(1.0)
+  const [inlineRotation, setInlineRotation] = useState(0)
+
+  const zoomInInline = () => setInlineZoom(z => Math.min(Number((z + 0.25).toFixed(2)), 3.0))
+  const zoomOutInline = () => setInlineZoom(z => Math.max(Number((z - 0.25).toFixed(2)), 0.5))
+  const rotateAnticlockwiseInline = () => setInlineRotation(r => r - 90)
+  const rotateClockwiseInline = () => setInlineRotation(r => r + 90)
+  const resetInlineControls = () => {
+    setInlineZoom(1.0)
+    setInlineRotation(0)
+  }
+
+  const rotateAnticlockwise = () => setLightboxRotation((prev) => prev - 90)
+  const rotateClockwise = () => setLightboxRotation((prev) => prev + 90)
+  const resetRotation = () => setLightboxRotation(0)
+  const closeLightbox = () => {
+    setLightboxImage(null)
+    setLightboxRotation(0)
+  }
+
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      if (!lightboxImage) return
+      if (e.key === 'Escape') closeLightbox()
+      else if (e.key === 'ArrowLeft' || e.key === 'r' || e.key === 'R') rotateAnticlockwise()
+      else if (e.key === 'ArrowRight') rotateClockwise()
+    }
+    window.addEventListener('keydown', handleKeyDown)
+    return () => window.removeEventListener('keydown', handleKeyDown)
+  }, [lightboxImage])
   
   const searchInputRef = useRef(null)
+  const toastTimeoutRef = useRef(null)
 
   useEffect(() => {
     fetch(`${API_BASE}/api/health`)
@@ -38,19 +68,6 @@ export default function App() {
       .then(d => d && setDocuments(d.documents || []))
       .catch(() => {})
 
-    const savedKey = localStorage.getItem('llm_api_key')
-    const savedProvider = localStorage.getItem('llm_provider') || 'groq'
-    if (savedKey) {
-      fetch(`${API_BASE}/api/set-key`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ provider: savedProvider, api_key: savedKey })
-      }).then(r => {
-        if (r.ok) {
-          fetch(`${API_BASE}/api/health`).then(hr => hr.ok ? hr.json() : null).then(hd => hd && setHealth(hd)).catch(() => {})
-        }
-      }).catch(() => {})
-    }
   }, [])
 
   // Keyboard accelerator (Cmd+K / Ctrl+K)
@@ -65,6 +82,7 @@ export default function App() {
       }
       if (e.key === 'Escape') {
         setDocModal(null)
+        setLightboxImage(null)
       }
     }
     window.addEventListener('keydown', handleKeyDown)
@@ -80,6 +98,24 @@ export default function App() {
   }
 
   const abortControllerRef = useRef(null)
+  const requestIdRef = useRef(null)
+
+  const stopActiveRequest = () => {
+    const requestId = requestIdRef.current
+    if (abortControllerRef.current) abortControllerRef.current.abort()
+    if (requestId) {
+      fetch(`${API_BASE}/api/cancel/${encodeURIComponent(requestId)}`, { method: 'POST', keepalive: true }).catch(() => {})
+    }
+    requestIdRef.current = null
+    setLoading(false)
+    setLoadingAction(null)
+    triggerToast('Request cancelled')
+  }
+
+  const createRequestId = () => {
+    if (globalThis.crypto?.randomUUID) return globalThis.crypto.randomUUID()
+    return `${Date.now()}-${Math.random().toString(36).slice(2)}`
+  }
 
   const handleQuery = async (queryText = question, selectedMode = mode) => {
     const q = queryText.trim()
@@ -89,26 +125,29 @@ export default function App() {
       return
     }
 
-    if (abortControllerRef.current) {
-      abortControllerRef.current.abort()
-    }
-    abortControllerRef.current = new AbortController()
+    if (loading) return
+    const controller = new AbortController()
+    const requestId = createRequestId()
+    abortControllerRef.current = controller
+    requestIdRef.current = requestId
 
     setLoading(true)
+    setLoadingAction('search')
+    setLoadingMode(selectedMode)
     setLoadingStep(1)
     setResult(null)
     setComparison(null)
     setSelectedEvidence(null)
 
-    const step1Timer = setTimeout(() => setLoadingStep(2), 1200)
-    const step2Timer = setTimeout(() => setLoadingStep(3), 3200)
+    const step1Timer = setTimeout(() => setLoadingStep(2), selectedMode === 'visual' ? 0 : 1200)
+    const step2Timer = setTimeout(() => setLoadingStep(3), selectedMode === 'text' ? 1200 : 3200)
 
     try {
       const res = await fetch(`${API_BASE}/api/query`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ question: q, mode: selectedMode, top_k: 5 }),
-        signal: abortControllerRef.current.signal,
+        body: JSON.stringify({ question: q, mode: selectedMode, top_k: 5, request_id: requestId }),
+        signal: controller.signal,
       })
 
       if (!res.ok) {
@@ -130,6 +169,8 @@ export default function App() {
       clearTimeout(step1Timer)
       clearTimeout(step2Timer)
       setLoading(false)
+      setLoadingAction(null)
+      if (requestIdRef.current === requestId) requestIdRef.current = null
     }
   }
 
@@ -141,12 +182,15 @@ export default function App() {
       return
     }
 
-    if (abortControllerRef.current) {
-      abortControllerRef.current.abort()
-    }
-    abortControllerRef.current = new AbortController()
+    if (loading) return
+    const controller = new AbortController()
+    const requestId = createRequestId()
+    abortControllerRef.current = controller
+    requestIdRef.current = requestId
 
     setLoading(true)
+    setLoadingAction('compare')
+    setLoadingMode('compare')
     setLoadingStep(1)
     setResult(null)
     setComparison(null)
@@ -159,8 +203,8 @@ export default function App() {
       const res = await fetch(`${API_BASE}/api/compare`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ question: q, top_k: 3 }),
-        signal: abortControllerRef.current.signal,
+        body: JSON.stringify({ question: q, top_k: 3, request_id: requestId }),
+        signal: controller.signal,
       })
 
       if (!res.ok) {
@@ -179,37 +223,13 @@ export default function App() {
       clearTimeout(step1Timer)
       clearTimeout(step2Timer)
       setLoading(false)
+      setLoadingAction(null)
+      if (requestIdRef.current === requestId) requestIdRef.current = null
     }
   }
 
-  const saveApiKey = async () => {
-    if (!apiKey.trim()) return
-    try {
-      const res = await fetch(`${API_BASE}/api/set-key`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ provider: apiProvider, api_key: apiKey })
-      })
-
-      if (!res.ok) {
-        const errorData = await res.json().catch(() => ({}))
-        throw new Error(errorData.detail || `HTTP ${res.status}`)
-      }
-
-      const data = await res.json()
-      if (data.status === 'ok') {
-        localStorage.setItem('llm_api_key', apiKey)
-        localStorage.setItem('llm_provider', apiProvider)
-        setApiKeySaved(true)
-        setApiKeyEditing(false)
-        const h = await fetch(`${API_BASE}/api/health`).then(r => r.ok ? r.json() : null).catch(() => null)
-        if (h) setHealth(h)
-        triggerToast(`${apiProvider.toUpperCase()} API key saved!`)
-      }
-    } catch (e) {
-      triggerToast('Failed to set API key: ' + e.message)
-    }
-  }
+  const showTextStage = loadingMode !== 'visual'
+  const showVisualStage = loadingMode !== 'text'
 
   return (
     <div className="bg-surface-container-lowest text-on-surface antialiased relative min-h-screen selection:bg-primary-container selection:text-on-primary-container overflow-x-hidden text-sm">
@@ -257,40 +277,11 @@ export default function App() {
             </div>
           </div>
 
-          {/* Right API Key Control */}
-          <div className="flex items-center gap-2 shrink-0 text-xs">
-            <div className="flex items-center gap-1.5">
-              <span className="material-symbols-outlined text-secondary text-[15px]">key</span>
-              {apiKeySaved && !apiKeyEditing ? (
-                <span className="text-on-surface font-medium hidden sm:inline">
-                  GROQ Active <span className="text-outline font-normal">({apiKey.slice(0, 6)}••)</span>
-                </span>
-              ) : (
-                <div className="flex items-center gap-1.5">
-                  <input
-                    type="password"
-                    placeholder="gsk_..."
-                    value={apiKey}
-                    onChange={e => setApiKey(e.target.value)}
-                    className="bg-surface-container border border-outline-variant/40 rounded px-2 py-0.5 text-xs text-on-surface focus:outline-none w-32"
-                  />
-                  <button 
-                    className="px-2 py-0.5 rounded bg-primary-container text-on-primary-container font-semibold hover:brightness-110"
-                    onClick={saveApiKey}
-                  >
-                    Save
-                  </button>
-                </div>
-              )}
-            </div>
-            {apiKeySaved && !apiKeyEditing && (
-              <button 
-                className="px-2 py-0.5 rounded bg-surface-container hover:bg-surface-container-high text-on-surface transition-colors border border-outline-variant/30 text-xs"
-                onClick={() => setApiKeyEditing(true)}
-              >
-                Configure
-              </button>
-            )}
+          <div className="flex items-center gap-1.5 shrink-0 text-xs">
+            <span className={`w-1.5 h-1.5 rounded-full ${health?.llm_configured ? 'bg-tertiary' : 'bg-amber-500'}`}></span>
+            <span className="text-on-surface-variant hidden sm:inline">
+              {health?.llm_configured ? 'Groq Ready' : 'Groq Key Missing'}
+            </span>
           </div>
 
         </div>
@@ -298,8 +289,89 @@ export default function App() {
 
       {/* MAIN WORKSPACE AREA */}
       <main className="w-full pt-20 pb-10 relative z-10 min-h-screen flex flex-col justify-between">
-        <div className="w-full max-w-6xl mx-auto px-4 sm:px-6">
+        <div className="w-full max-w-6xl mx-auto px-4 sm:px-6 space-y-4">
           
+          {/* SEARCH CONSOLE (ALWAYS VISIBLE AT TOP) */}
+          <section className="relative w-full max-w-4xl mx-auto stagger-1">
+            <div className="relative w-full rounded-xl bg-surface-container/80 border border-outline-variant/30 backdrop-blur-xl shadow-md p-3 sm:p-3.5 space-y-2.5">
+              <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 w-full">
+                <div className="relative flex-1 min-w-0 flex items-center bg-surface-container-lowest/90 rounded-lg border border-outline-variant/30 shadow-inner px-3 py-1.5 focus-within:border-primary/70 transition-all">
+                  <span className="material-symbols-outlined text-outline text-[18px] mr-2 shrink-0">search</span>
+                  <input 
+                    ref={searchInputRef}
+                    className="w-full bg-transparent text-xs sm:text-sm text-on-surface placeholder:text-outline/60 focus:outline-none"
+                    placeholder="Ask a question about NIT Jamshedpur notices, fee deadlines, academic circulars..."
+                    value={question}
+                    onChange={e => setQuestion(e.target.value)}
+                    onKeyDown={e => e.key === 'Enter' && handleQuery()}
+                  />
+                  <div className="flex items-center gap-1 shrink-0 ml-1">
+                    {(question || result || comparison) && (
+                      <button 
+                        className="text-outline hover:text-on-surface p-0.5 rounded-full hover:bg-surface-container transition-colors"
+                        onClick={() => {
+                          setQuestion('')
+                          setResult(null)
+                          setComparison(null)
+                          setSelectedEvidence(null)
+                        }}
+                        title="Clear Search & Reset View"
+                      >
+                        <span className="material-symbols-outlined text-[16px]">close</span>
+                      </button>
+                    )}
+                  </div>
+                </div>
+                <div className="flex items-center gap-2 shrink-0">
+                  <button 
+                    disabled={loading}
+                    className={`flex-1 sm:flex-none flex items-center justify-center gap-1.5 px-4 py-1.5 rounded-lg bg-primary-container text-white font-semibold text-xs shadow-sm transition-all ${loading ? 'opacity-50 cursor-not-allowed' : 'hover:brightness-110 active:scale-95'}`}
+                    onClick={() => handleQuery()}
+                  >
+                    <span className="material-symbols-outlined text-[16px]">{loadingAction === 'search' ? 'sync' : 'manage_search'}</span>
+                    <span>{loadingAction === 'search' ? 'Searching...' : 'Search'}</span>
+                  </button>
+                  <button 
+                    disabled={loading}
+                    className={`flex-1 sm:flex-none flex items-center justify-center gap-1.5 px-4 py-1.5 rounded-lg bg-gradient-to-r from-amber-600 to-amber-500 text-white font-semibold text-xs shadow-sm transition-all ${loading ? 'opacity-50 cursor-not-allowed' : 'hover:brightness-110 active:scale-95'}`}
+                    onClick={() => handleCompare()}
+                  >
+                    <span className="material-symbols-outlined text-[16px]">{loadingAction === 'compare' ? 'sync' : 'electric_bolt'}</span>
+                    <span>{loadingAction === 'compare' ? 'Comparing...' : 'Compare All'}</span>
+                  </button>
+                </div>
+              </div>
+
+              {/* Pipeline Selector Chips */}
+              <div className="flex flex-wrap items-center justify-between gap-2 pt-1 border-t border-outline-variant/15 text-xs">
+                <span className="text-[10px] text-outline uppercase tracking-wider font-mono select-none">Pipeline Mode:</span>
+                <div className="flex flex-wrap items-center gap-1.5">
+                  <button 
+                    className={`flex items-center gap-1.5 px-2.5 py-1 rounded-md transition-all text-xs ${mode === 'text' ? 'bg-surface-container-high text-on-surface border border-tertiary/50 font-semibold shadow-sm' : 'bg-surface-container-low/50 text-on-surface-variant border border-outline-variant/10 hover:border-tertiary/30'}`}
+                    onClick={() => { setMode('text'); triggerToast('Pipeline mode set to: TEXT BASELINE'); }}
+                  >
+                    <span className="w-1.5 h-1.5 rounded-full bg-tertiary"></span>
+                    <span>Text Baseline (BM25)</span>
+                  </button>
+                  <button 
+                    className={`flex items-center gap-1.5 px-2.5 py-1 rounded-md transition-all text-xs ${mode === 'visual' ? 'bg-surface-container-high text-on-surface border border-primary/50 font-semibold shadow-sm' : 'bg-surface-container-low/50 text-on-surface-variant border border-outline-variant/10 hover:border-primary-container/30'}`}
+                    onClick={() => { setMode('visual'); triggerToast('Pipeline mode set to: VISUAL VLM'); }}
+                  >
+                    <span className="w-1.5 h-1.5 rounded-full bg-primary"></span>
+                    <span>Visual VLM (ColQwen2)</span>
+                  </button>
+                  <button 
+                    className={`flex items-center gap-1.5 px-2.5 py-1 rounded-md transition-all text-xs ${mode === 'hybrid_reranked' ? 'bg-surface-container-high text-on-surface border border-secondary/50 font-semibold shadow-sm' : 'bg-surface-container-low/50 text-on-surface-variant border border-outline-variant/10 hover:border-secondary/30'}`}
+                    onClick={() => { setMode('hybrid_reranked'); triggerToast('Pipeline mode set to: HYBRID RERANKED'); }}
+                  >
+                    <span className="w-1.5 h-1.5 rounded-full bg-secondary"></span>
+                    <span>Hybrid Reranked (ColQwen2 + RRF)</span>
+                  </button>
+                </div>
+              </div>
+            </div>
+          </section>
+
           {/* LOADING / SCANNING STATE */}
           {loading ? (
             <div className="py-4 space-y-4 animate-fade-in-up">
@@ -314,9 +386,9 @@ export default function App() {
                     />
                   </div>
                   <div className="flex items-center gap-2 shrink-0">
-                    <button className="flex items-center gap-1.5 px-4 py-1.5 rounded-lg bg-surface-container-lowest text-on-surface font-semibold text-xs border border-secondary/40 shadow-sm">
-                      <div className="w-3.5 h-3.5 border-2 border-secondary/30 border-t-secondary rounded-full animate-spin"></div>
-                      <span>Synthesizing...</span>
+                    <button onClick={stopActiveRequest} className="flex items-center gap-1.5 px-4 py-1.5 rounded-lg bg-error-container/30 text-error font-semibold text-xs border border-error/40 shadow-sm hover:brightness-110">
+                      <span className="material-symbols-outlined text-[16px]">stop_circle</span>
+                      <span>Stop</span>
                     </button>
                   </div>
                 </div>
@@ -343,15 +415,15 @@ export default function App() {
                 </div>
 
                 <div className="relative z-10 w-full grid grid-cols-1 md:grid-cols-3 gap-3 text-xs">
-                  <div className={`flex flex-col rounded-lg p-3 border transition-all ${loadingStep >= 1 ? 'bg-surface-container/90 border-tertiary/40' : 'bg-surface-container/40 border-outline-variant/20'}`}>
+                  {showTextStage && <div className={`flex flex-col rounded-lg p-3 border transition-all ${loadingStep >= 1 ? 'bg-surface-container/90 border-tertiary/40' : 'bg-surface-container/40 border-outline-variant/20'}`}>
                     <div className="flex items-center justify-between mb-1">
                       <span className="text-[10px] text-tertiary font-bold">STAGE 01</span>
                       <span className="material-symbols-outlined text-tertiary text-[16px]">check_circle</span>
                     </div>
                     <h3 className="text-sm text-on-surface font-bold">Text Chunking</h3>
                     <p className="text-xs text-on-surface-variant mt-0.5">BM25 + all-MiniLM-L6-v2 dense vector search.</p>
-                  </div>
-                  <div className={`flex flex-col rounded-lg p-3 border transition-all ${loadingStep >= 2 ? 'bg-surface-container/90 border-primary/40' : 'bg-surface-container/40 border-outline-variant/20'}`}>
+                  </div>}
+                  {showVisualStage && <div className={`flex flex-col rounded-lg p-3 border transition-all ${loadingStep >= 2 ? 'bg-surface-container/90 border-primary/40' : 'bg-surface-container/40 border-outline-variant/20'}`}>
                     <div className="flex items-center justify-between mb-1">
                       <span className="text-[10px] text-primary font-bold">STAGE 02</span>
                       <span className={`material-symbols-outlined text-[16px] ${loadingStep >= 2 ? 'text-primary animate-spin' : 'text-outline'}`}>
@@ -360,7 +432,7 @@ export default function App() {
                     </div>
                     <h3 className="text-sm text-on-surface font-bold">ColQwen2 Visual Patching</h3>
                     <p className="text-xs text-on-surface-variant mt-0.5">Multi-vector MaxSim interaction.</p>
-                  </div>
+                  </div>}
                   <div className={`flex flex-col rounded-lg p-3 border transition-all ${loadingStep >= 3 ? 'bg-surface-container/90 border-secondary/40' : 'bg-surface-container/40 border-outline-variant/20'}`}>
                     <div className="flex items-center justify-between mb-1">
                       <span className="text-[10px] text-secondary font-bold">STAGE 03</span>
@@ -376,61 +448,41 @@ export default function App() {
             </div>
           ) : comparison ? (
             /* MULTI-MODE COMPARISON RESULTS VIEW */
-            <div className="py-4 space-y-4 animate-fade-in-up">
-              {/* Header Controller Bar */}
-              <div className="p-3 rounded-xl bg-surface-container-low/90 border border-outline-variant/30 shadow-md backdrop-blur-md">
-                <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-2.5">
-                  <div className="relative flex-1 min-w-0 flex items-center bg-surface-container-lowest rounded-lg px-3 py-1.5 border border-outline-variant/30 focus-within:border-primary">
-                    <span className="material-symbols-outlined text-outline text-[18px] mr-2">search</span>
-                    <input 
-                      className="w-full bg-transparent text-on-surface text-sm focus:outline-none"
-                      value={question}
-                      onChange={e => setQuestion(e.target.value)}
-                      onKeyDown={e => e.key === 'Enter' && handleQuery()}
-                    />
-                    {question && (
-                      <button className="text-outline hover:text-on-surface p-1" onClick={() => setQuestion('')}>
-                        <span className="material-symbols-outlined text-[16px]">close</span>
-                      </button>
+            <div className="py-2 space-y-4 animate-fade-in-up">
+              {comparison.error ? (
+                <div className="p-4 rounded-xl bg-error-container/20 border border-error/40 text-error text-xs flex items-center gap-3">
+                  <span className="material-symbols-outlined text-[24px]">warning</span>
+                  <div>
+                    <h3 className="font-bold text-sm">Multi-Mode Comparison Failed</h3>
+                    <p className="text-on-surface-variant text-xs mt-0.5">{comparison.error}</p>
+                  </div>
+                </div>
+              ) : (
+                <>
+                  {/* Benchmark Telemetry Banner */}
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 p-3 rounded-xl bg-surface-container/90 border border-outline-variant/30 shadow-sm">
+                    <div className="flex items-center gap-2.5 min-w-0">
+                      <div className="w-8 h-8 rounded-lg bg-surface-container-high border border-outline-variant/30 flex items-center justify-center text-primary shrink-0">
+                        <span className="material-symbols-outlined text-[18px]">view_column</span>
+                      </div>
+                      <div className="min-w-0">
+                        <div className="flex items-center gap-2">
+                          <h1 className="text-sm text-on-surface font-bold tracking-tight shrink-0">Multi-Mode Retrieval Evaluation</h1>
+                          <span className="text-outline text-xs">•</span>
+                          <span className="text-xs text-secondary font-medium truncate max-w-xs sm:max-w-md">"{comparison.question}"</span>
+                        </div>
+                      </div>
+                    </div>
+                    {comparison.total_time_ms != null && (
+                      <div className="flex items-center gap-2 shrink-0 text-xs">
+                        <div className="px-2.5 py-0.5 rounded-md bg-surface-container-low border border-outline-variant/30 flex items-center gap-1.5">
+                          <span className="w-1.5 h-1.5 rounded-full bg-tertiary"></span>
+                          <span className="text-outline">Total Latency:</span>
+                          <span className="text-primary font-bold">{comparison.total_time_ms}ms</span>
+                        </div>
+                      </div>
                     )}
                   </div>
-                  <div className="flex items-center gap-2 shrink-0">
-                    <button className="px-3.5 py-1.5 rounded-lg bg-surface-container-high hover:bg-surface-bright text-on-surface font-semibold text-xs flex items-center gap-1 border border-outline-variant/30" onClick={() => handleQuery()}>
-                      <span className="material-symbols-outlined text-primary text-[16px]">manage_search</span>
-                      <span>Single Search</span>
-                    </button>
-                    <button className="shimmer-element px-4 py-1.5 rounded-lg bg-primary-container text-on-primary-container font-semibold text-xs flex items-center gap-1 shadow-sm" onClick={() => handleCompare()}>
-                      <span className="material-symbols-outlined text-[16px]">bolt</span>
-                      <span>Compare All</span>
-                    </button>
-                  </div>
-                </div>
-              </div>
-
-              {/* Benchmark Telemetry Banner */}
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 p-3 rounded-xl bg-surface-container/90 border border-outline-variant/30 shadow-sm">
-                <div className="flex items-center gap-2.5 min-w-0">
-                  <div className="w-8 h-8 rounded-lg bg-surface-container-high border border-outline-variant/30 flex items-center justify-center text-primary shrink-0">
-                    <span className="material-symbols-outlined text-[18px]">view_column</span>
-                  </div>
-                  <div className="min-w-0">
-                    <div className="flex items-center gap-2">
-                      <h1 className="text-sm text-on-surface font-bold tracking-tight shrink-0">Multi-Mode Retrieval Evaluation</h1>
-                      <span className="text-outline text-xs">•</span>
-                      <span className="text-xs text-secondary font-medium truncate max-w-xs sm:max-w-md">"{comparison.question}"</span>
-                    </div>
-                  </div>
-                </div>
-                {comparison.total_time_ms != null && (
-                  <div className="flex items-center gap-2 shrink-0 text-xs">
-                    <div className="px-2.5 py-0.5 rounded-md bg-surface-container-low border border-outline-variant/30 flex items-center gap-1.5">
-                      <span className="w-1.5 h-1.5 rounded-full bg-tertiary"></span>
-                      <span className="text-outline">Total Latency:</span>
-                      <span className="text-primary font-bold">{comparison.total_time_ms}ms</span>
-                    </div>
-                  </div>
-                )}
-              </div>
 
               {/* Multi-Column Evaluation Grid */}
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -490,9 +542,17 @@ export default function App() {
                           ))}
                         </div>
 
-                        <div className="relative w-full aspect-[4/3] rounded-lg overflow-hidden bg-surface-container-lowest border border-outline-variant/20 flex items-center justify-center">
+                        <div 
+                          className="relative w-full aspect-[4/3] rounded-lg overflow-hidden bg-surface-container-lowest border border-outline-variant/20 flex items-center justify-center cursor-pointer group hover:border-tertiary transition-all"
+                          onClick={() => topPage?.image_url && setLightboxImage({ url: topPage.image_url, title: `${topPage.notice_id} - Page ${topPage.page_number || topPage.page || 1}` })}
+                        >
                           {topPage?.image_url ? (
-                            <img src={topPage.image_url} alt="Text Evidence" className="w-full h-full object-contain" onError={(e) => { e.target.style.display = 'none' }} />
+                            <>
+                              <img src={topPage.image_url} alt="Text Evidence" className="w-full h-full object-contain group-hover:scale-[1.02] transition-transform duration-200" onError={(e) => { e.target.style.display = 'none' }} />
+                              <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors flex items-center justify-center pointer-events-none">
+                                <span className="material-symbols-outlined text-white opacity-0 group-hover:opacity-100 text-2xl transition-opacity drop-shadow-md">zoom_in</span>
+                              </div>
+                            </>
                           ) : (
                             <div className="p-2 text-center text-xs text-outline">{topPage ? `${topPage.notice_id} p.${topPage.page_number || 1}` : 'No Image'}</div>
                           )}
@@ -558,10 +618,18 @@ export default function App() {
                           ))}
                         </div>
 
-                        <div className="relative w-full aspect-[4/3] rounded-lg overflow-hidden bg-surface-container-lowest border border-primary/30 flex items-center justify-center">
+                        <div 
+                          className="relative w-full aspect-[4/3] rounded-lg overflow-hidden bg-surface-container-lowest border border-primary/30 flex items-center justify-center cursor-pointer group hover:border-primary transition-all"
+                          onClick={() => topPage?.image_url && setLightboxImage({ url: topPage.image_url, title: `${topPage.notice_id} - Page ${topPage.page_number || topPage.page || 1}` })}
+                        >
                           <div className="laser-scan text-primary pointer-events-none z-20"></div>
                           {topPage?.image_url ? (
-                            <img src={topPage.image_url} alt="Visual Evidence" className="w-full h-full object-contain" onError={(e) => { e.target.style.display = 'none' }} />
+                            <>
+                              <img src={topPage.image_url} alt="Visual Evidence" className="w-full h-full object-contain group-hover:scale-[1.02] transition-transform duration-200" onError={(e) => { e.target.style.display = 'none' }} />
+                              <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors flex items-center justify-center pointer-events-none z-30">
+                                <span className="material-symbols-outlined text-white opacity-0 group-hover:opacity-100 text-2xl transition-opacity drop-shadow-md">zoom_in</span>
+                              </div>
+                            </>
                           ) : (
                             <div className="p-2 text-center text-xs text-primary">{topPage ? `${topPage.notice_id} p.${topPage.page_number || 1}` : 'No Image'}</div>
                           )}
@@ -627,10 +695,18 @@ export default function App() {
                           ))}
                         </div>
 
-                        <div className="relative w-full aspect-[4/3] rounded-lg overflow-hidden bg-surface-container-lowest border border-secondary/30 flex items-center justify-center">
+                        <div 
+                          className="relative w-full aspect-[4/3] rounded-lg overflow-hidden bg-surface-container-lowest border border-secondary/30 flex items-center justify-center cursor-pointer group hover:border-secondary transition-all"
+                          onClick={() => topPage?.image_url && setLightboxImage({ url: topPage.image_url, title: `${topPage.notice_id} - Page ${topPage.page_number || topPage.page || 1}` })}
+                        >
                           <div className="laser-scan text-secondary pointer-events-none z-20"></div>
                           {topPage?.image_url ? (
-                            <img src={topPage.image_url} alt="Hybrid Evidence" className="w-full h-full object-contain" onError={(e) => { e.target.style.display = 'none' }} />
+                            <>
+                              <img src={topPage.image_url} alt="Hybrid Evidence" className="w-full h-full object-contain group-hover:scale-[1.02] transition-transform duration-200" onError={(e) => { e.target.style.display = 'none' }} />
+                              <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors flex items-center justify-center pointer-events-none z-30">
+                                <span className="material-symbols-outlined text-white opacity-0 group-hover:opacity-100 text-2xl transition-opacity drop-shadow-md">zoom_in</span>
+                              </div>
+                            </>
                           ) : (
                             <div className="p-2 text-center text-xs text-secondary">{topPage ? `${topPage.notice_id} p.${topPage.page_number || 1}` : 'No Image'}</div>
                           )}
@@ -650,129 +726,297 @@ export default function App() {
                   </p>
                 </div>
               </div>
+                </>
+              )}
             </div>
           ) : result ? (
-            /* SINGLE MODE SEARCH RESULT VIEW */
-            <div className="w-full max-w-4xl mx-auto space-y-3 animate-fade-in-up">
-              <div className="p-4 rounded-xl bg-surface-container/80 border border-primary/30 shadow-lg space-y-3">
-                <div className="flex items-center justify-between pb-2 border-b border-outline-variant/20">
-                  <div className="flex items-center gap-1.5">
-                    <span className="material-symbols-outlined text-primary text-[18px]">auto_awesome</span>
-                    <span className="text-sm text-on-surface font-bold">Query Result ({mode.toUpperCase()})</span>
-                  </div>
-                  <button className="px-2.5 py-1 rounded bg-surface-container-high text-on-surface text-xs" onClick={() => setResult(null)}>
-                    New Search
-                  </button>
-                </div>
-                <div className="p-3 rounded-lg bg-surface-container-lowest border border-outline-variant/30 space-y-1">
-                  <div className="text-[10px] text-outline font-mono">SYNTHESIZED ANSWER:</div>
-                  <div className="text-xs text-on-surface leading-relaxed">
-                    {result.answer}
-                  </div>
-                </div>
-                <div className="space-y-1.5">
-                  <div className="text-[10px] text-outline uppercase">Retrieved Evidence Pages</div>
-                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
-                    {result.retrieved_pages?.map((page) => {
-                      const isSelected = selectedEvidence?.notice_id === page.notice_id && selectedEvidence?.page_number === (page.page_number || page.page)
-                      return (
-                        <div 
-                          key={`${page.notice_id}_p${page.page_number || page.page || 1}`} 
-                          className={`p-2.5 rounded-lg border transition-all cursor-pointer ${isSelected ? 'bg-surface-container-high border-primary shadow-sm' : 'bg-surface-container-low border-outline-variant/20 hover:border-primary/50'}`}
-                          onClick={() => setSelectedEvidence(page)}
-                        >
-                          <div className="flex items-center justify-between text-xs mb-1.5">
-                            <span className="text-primary font-bold">{page.notice_id} p.{page.page_number || page.page || 1}</span>
-                            <span className="text-outline text-[10px]">{page.score != null ? Number(page.score).toFixed(4) : '-'}</span>
+            /* SINGLE MODE SEARCH RESULT VIEW (2-COLUMN SPLIT DASHBOARD WITH INTERACTIVE SIDE VIEWER) */
+            <div className="w-full space-y-4 animate-fade-in-up">
+              {(() => {
+                const activeDoc = selectedEvidence || result.retrieved_pages?.[0]
+                return (
+                  <>
+                    {/* SINGLE SEARCH TELEMETRY BANNER */}
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 p-3.5 rounded-xl bg-surface-container/90 border border-outline-variant/30 backdrop-blur-xl shadow-md">
+                      <div className="flex items-center gap-2.5 min-w-0">
+                        <div className="w-8 h-8 rounded-lg bg-surface-container-high border border-outline-variant/30 flex items-center justify-center text-primary shrink-0">
+                          <span className="material-symbols-outlined text-[20px]">auto_awesome</span>
+                        </div>
+                        <div className="min-w-0">
+                          <div className="flex items-center gap-2 flex-wrap">
+                            <h2 className="text-sm text-on-surface font-extrabold tracking-tight">Single Search Result</h2>
+                            <span className="px-2 py-0.5 rounded-full bg-secondary-container/40 text-secondary border border-secondary/30 text-[10px] font-bold uppercase font-mono">
+                              {mode.replace('_', ' ')}
+                            </span>
+                            <span className="text-outline text-xs">•</span>
+                            <span className="text-xs text-on-surface-variant font-medium truncate max-w-md">"{question}"</span>
                           </div>
-                          {page.image_url && (
-                            <img src={page.image_url} alt="Evidence" className="w-full h-28 object-contain rounded bg-surface-container-lowest" onError={(e) => { e.target.style.display = 'none' }} />
+                        </div>
+                      </div>
+                      {result.total_time_ms != null && (
+                        <div className="flex items-center gap-2 shrink-0 text-xs">
+                          <div className="px-2.5 py-1 rounded-lg bg-surface-container-low border border-outline-variant/30 flex items-center gap-1.5 font-mono">
+                            <span className="w-2 h-2 rounded-full bg-tertiary"></span>
+                            <span className="text-outline text-[11px]">Latency:</span>
+                            <span className="text-primary font-bold">{result.total_time_ms}ms</span>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+
+                    {/* 2-COLUMN SPLIT DASHBOARD */}
+                    <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 items-start">
+                      
+                      {/* COLUMN 1 (LEFT ~7 COLS): INTERACTIVE DOCUMENT VIEWER */}
+                      <div className="lg:col-span-7 flex flex-col gap-3 rounded-2xl bg-surface-container-low/95 border border-primary/30 p-4 shadow-xl backdrop-blur-md">
+                        
+                        {/* Viewer Header */}
+                        <div className="flex items-center justify-between gap-2 pb-2.5 border-b border-outline-variant/20">
+                          <div className="flex items-center gap-2 min-w-0">
+                            <span className="material-symbols-outlined text-primary text-[20px]">description</span>
+                            <div className="min-w-0">
+                              <h3 className="text-xs sm:text-sm font-bold text-on-surface truncate">
+                                {activeDoc?.notice_id || 'Document Evidence'}
+                              </h3>
+                              <p className="text-[10px] text-outline">
+                                Page {activeDoc?.page_number || activeDoc?.page || 1} • {activeDoc?.notice_id}.pdf
+                              </p>
+                            </div>
+                          </div>
+                          {activeDoc?.score != null && (
+                            <span className="px-2 py-0.5 rounded bg-primary-container/30 border border-primary/40 text-primary text-[10px] font-bold font-mono">
+                              Match Score: {Number(activeDoc.score).toFixed(4)}
+                            </span>
                           )}
                         </div>
-                      )
-                    })}
-                  </div>
-                </div>
-              </div>
-            </div>
-          ) : (
-            /* LANDING & SEARCH CONSOLE */
-            <div className="w-full flex flex-col gap-5">
-              
-              {/* SEARCH CONSOLE */}
-              <section className="relative w-full max-w-4xl mx-auto stagger-1">
-                <div className="relative w-full rounded-xl bg-surface-container/60 border border-outline-variant/20 backdrop-blur-xl shadow-md p-3 sm:p-3.5 space-y-2.5">
-                  <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 w-full">
-                    <div className="relative flex-1 min-w-0 flex items-center bg-surface-container-lowest/90 rounded-lg border border-outline-variant/30 shadow-inner px-3 py-1.5 focus-within:border-primary/70 transition-all">
-                      <span className="material-symbols-outlined text-outline text-[18px] mr-2 shrink-0">search</span>
-                      <input 
-                        ref={searchInputRef}
-                        className="w-full bg-transparent text-xs sm:text-sm text-on-surface placeholder:text-outline/60 focus:outline-none"
-                        placeholder="Ask a question about NIT Jamshedpur notices, fee deadlines, academic circulars..."
-                        value={question}
-                        onChange={e => setQuestion(e.target.value)}
-                        onKeyDown={e => e.key === 'Enter' && handleQuery()}
-                      />
-                      <div className="flex items-center gap-1 shrink-0 ml-1">
-                        {question && (
-                          <button 
-                            className="text-outline hover:text-on-surface p-0.5 rounded-full hover:bg-surface-container"
-                            onClick={() => setQuestion('')}
-                          >
-                            <span className="material-symbols-outlined text-[16px]">close</span>
-                          </button>
-                        )}
+
+                        {/* Interactive Controls Toolbar */}
+                        <div className="flex flex-wrap items-center justify-between gap-2 p-1.5 rounded-lg bg-surface-container-lowest/80 border border-outline-variant/20 text-xs">
+                          
+                          {/* Zoom Buttons */}
+                          <div className="flex items-center gap-1">
+                            <button 
+                              className="p-1 rounded hover:bg-surface-container-high text-on-surface active:scale-95 transition-all"
+                              onClick={zoomOutInline}
+                              title="Zoom Out (-)"
+                            >
+                              <span className="material-symbols-outlined text-[18px]">zoom_out</span>
+                            </button>
+                            <span className="text-[10px] font-mono text-outline px-1.5 py-0.5 rounded bg-surface-container/60 min-w-[42px] text-center">
+                              {Math.round(inlineZoom * 100)}%
+                            </span>
+                            <button 
+                              className="p-1 rounded hover:bg-surface-container-high text-on-surface active:scale-95 transition-all"
+                              onClick={zoomInInline}
+                              title="Zoom In (+)"
+                            >
+                              <span className="material-symbols-outlined text-[18px]">zoom_in</span>
+                            </button>
+                          </div>
+
+                          {/* Rotate Buttons */}
+                          <div className="flex items-center gap-1">
+                            <button 
+                              className="flex items-center gap-1 px-2 py-1 rounded bg-surface-container-high hover:bg-primary/20 hover:text-primary text-on-surface text-xs font-semibold border border-outline-variant/20 active:scale-95 transition-all shadow-sm"
+                              onClick={rotateAnticlockwiseInline}
+                              title="Rotate Anticlockwise 90° (Left)"
+                            >
+                              <span className="material-symbols-outlined text-[16px]">rotate_left</span>
+                              <span className="hidden sm:inline">Rotate Left (-90°)</span>
+                            </button>
+
+                            <button 
+                              className="flex items-center gap-1 px-2 py-1 rounded bg-surface-container-high hover:bg-primary/20 hover:text-primary text-on-surface text-xs font-semibold border border-outline-variant/20 active:scale-95 transition-all shadow-sm"
+                              onClick={rotateClockwiseInline}
+                              title="Rotate Clockwise 90° (Right)"
+                            >
+                              <span className="material-symbols-outlined text-[16px]">rotate_right</span>
+                              <span className="hidden sm:inline">Rotate Right (+90°)</span>
+                            </button>
+
+                            <span className="text-[10px] font-mono text-outline px-1.5 py-0.5 rounded bg-surface-container/60">
+                              {((inlineRotation % 360) + 360) % 360}°
+                            </span>
+                          </div>
+
+                          {/* Reset & Fullscreen */}
+                          <div className="flex items-center gap-1">
+                            {(inlineZoom !== 1.0 || inlineRotation !== 0) && (
+                              <button 
+                                className="px-2 py-1 rounded bg-tertiary-container/30 hover:bg-tertiary-container/60 text-tertiary text-[11px] font-semibold border border-tertiary/30 active:scale-95 transition-all"
+                                onClick={resetInlineControls}
+                                title="Reset View"
+                              >
+                                Reset
+                              </button>
+                            )}
+
+                            {activeDoc?.image_url && (
+                              <button 
+                                className="flex items-center gap-1 px-2.5 py-1 rounded bg-primary-container text-white text-xs font-semibold shadow-sm hover:brightness-110 active:scale-95 transition-all"
+                                onClick={() => setLightboxImage({ url: activeDoc.image_url, title: `${activeDoc.notice_id} - Page ${activeDoc.page_number || 1}` })}
+                                title="Open Fullscreen Lightbox Modal"
+                              >
+                                <span className="material-symbols-outlined text-[16px]">fullscreen</span>
+                                <span>Fullscreen</span>
+                              </button>
+                            )}
+                          </div>
+                        </div>
+
+                        {/* Dynamic Image Viewport Container */}
+                        <div className="relative w-full h-[460px] rounded-xl overflow-auto bg-surface-container-lowest/90 border border-outline-variant/30 flex items-center justify-center p-3 shadow-inner select-none">
+                          {activeDoc?.image_url ? (
+                            <img 
+                              src={activeDoc.image_url} 
+                              alt="Document Evidence" 
+                              style={{
+                                transform: `scale(${inlineZoom}) rotate(${inlineRotation}deg)`,
+                                transition: 'transform 0.25s cubic-bezier(0.4, 0, 0.2, 1)',
+                                maxHeight: Math.abs(inlineRotation / 90) % 2 === 1 ? `${380 / inlineZoom}px` : '100%',
+                                maxWidth: Math.abs(inlineRotation / 90) % 2 === 1 ? `${380 / inlineZoom}px` : '100%'
+                              }}
+                              className="object-contain rounded shadow-lg max-h-full max-w-full"
+                              onError={(e) => { e.target.style.display = 'none' }}
+                            />
+                          ) : (
+                            <div className="text-xs text-outline text-center p-4">No page image available</div>
+                          )}
+                        </div>
+
+                        {/* Thumbnail Carousel Selector */}
+                        <div className="space-y-1.5 pt-1">
+                          <div className="text-[10px] text-outline font-semibold uppercase tracking-wider">
+                            All Retrieved Evidence Pages ({result.retrieved_pages?.length || 0})
+                          </div>
+                          <div className="grid grid-cols-3 sm:grid-cols-5 gap-2">
+                            {result.retrieved_pages?.map((page, idx) => {
+                              const isSelected = (selectedEvidence?.notice_id === page.notice_id && (selectedEvidence?.page_number || selectedEvidence?.page) === (page.page_number || page.page)) || (!selectedEvidence && idx === 0)
+                              return (
+                                <button
+                                  key={`${page.notice_id}_p${page.page_number || page.page || idx}`}
+                                  className={`p-1.5 rounded-lg border text-left transition-all flex flex-col gap-1 ${isSelected ? 'bg-surface-container-high border-primary ring-1 ring-primary shadow-sm' : 'bg-surface-container-lowest/80 border-outline-variant/20 hover:border-primary/40'}`}
+                                  onClick={() => {
+                                    setSelectedEvidence(page)
+                                    setInlineZoom(1.0)
+                                    setInlineRotation(0)
+                                  }}
+                                >
+                                  <div className="flex items-center justify-between text-[10px] font-bold truncate">
+                                    <span className={isSelected ? 'text-primary' : 'text-on-surface'}>p.{page.page_number || page.page || 1}</span>
+                                    <span className="text-outline text-[9px]">{page.score != null ? Number(page.score).toFixed(2) : '-'}</span>
+                                  </div>
+                                  {page.image_url ? (
+                                    <img src={page.image_url} alt="Thumbnail" className="w-full h-14 object-contain rounded bg-surface-container-lowest" onError={(e) => { e.target.style.display = 'none' }} />
+                                  ) : (
+                                    <div className="w-full h-14 flex items-center justify-center text-[9px] text-outline bg-surface-container">No Img</div>
+                                  )}
+                                </button>
+                              )
+                            })}
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* COLUMN 2 (RIGHT ~5 COLS): SYNTHESIZED ANSWER & METRICS */}
+                      <div className="lg:col-span-5 flex flex-col gap-4">
+                        
+                        {/* Synthesized Answer Card */}
+                        <div className="rounded-2xl bg-surface-container/90 border border-secondary/30 p-5 shadow-xl backdrop-blur-md space-y-3">
+                          <div className="flex items-center justify-between pb-2 border-b border-outline-variant/20">
+                            <div className="flex items-center gap-2">
+                              <span className="material-symbols-outlined text-secondary text-[20px]">psychology</span>
+                              <h3 className="text-sm font-extrabold text-on-surface tracking-tight">Synthesized Grounded Answer</h3>
+                            </div>
+                            <button 
+                              className="flex items-center gap-1 px-2.5 py-1 rounded bg-surface-container-high hover:bg-surface-bright text-on-surface text-xs font-semibold border border-outline-variant/20 active:scale-95 transition-all"
+                              onClick={() => {
+                                navigator.clipboard.writeText(result.answer)
+                                triggerToast('Answer copied to clipboard!')
+                              }}
+                              title="Copy Answer"
+                            >
+                              <span className="material-symbols-outlined text-[14px]">content_copy</span>
+                              <span>Copy</span>
+                            </button>
+                          </div>
+
+                          <div className="p-3.5 rounded-xl bg-surface-container-lowest/90 border border-outline-variant/30 space-y-1.5 shadow-inner">
+                            <div className="text-[10px] text-secondary font-mono font-bold tracking-wider uppercase">ANSWER SYNTHESIS</div>
+                            <div className="text-sm text-on-surface font-medium leading-relaxed whitespace-pre-wrap">
+                              {result.answer || "No grounded answer generated."}
+                            </div>
+                          </div>
+
+                          {/* Model info banner */}
+                          <div className="flex items-center justify-between text-[11px] px-3 py-1.5 rounded-lg bg-surface-container-low border border-outline-variant/20 text-on-surface-variant">
+                            <div className="flex items-center gap-1.5">
+                              <span className="w-1.5 h-1.5 rounded-full bg-secondary"></span>
+                              <span>Model: <strong className="text-on-surface">{health?.configured_model || 'qwen/qwen3.8-27b'}</strong></span>
+                            </div>
+                            <span>Grounding: <strong className="text-primary">Full Image</strong></span>
+                          </div>
+                        </div>
+
+                        {/* Evidence Sources Breakdown List */}
+                        <div className="rounded-2xl bg-surface-container/70 border border-outline-variant/25 p-4 shadow-md space-y-2.5">
+                          <div className="flex items-center justify-between">
+                            <h4 className="text-xs font-bold text-on-surface uppercase tracking-wider">Top Evidence Sources</h4>
+                            <span className="text-[10px] text-outline font-mono">Ranked by MaxSim Score</span>
+                          </div>
+
+                          <div className="space-y-2">
+                            {result.retrieved_pages?.map((page, idx) => {
+                              const isSelected = (selectedEvidence?.notice_id === page.notice_id && (selectedEvidence?.page_number || selectedEvidence?.page) === (page.page_number || page.page)) || (!selectedEvidence && idx === 0)
+                              return (
+                                <div
+                                  key={`src_${page.notice_id}_p${page.page_number || page.page || idx}`}
+                                  className={`p-2.5 rounded-xl border transition-all cursor-pointer flex items-center justify-between gap-3 ${isSelected ? 'bg-surface-container-high border-primary shadow-sm' : 'bg-surface-container-low/60 border-outline-variant/15 hover:border-primary/30'}`}
+                                  onClick={() => {
+                                    setSelectedEvidence(page)
+                                    setInlineZoom(1.0)
+                                    setInlineRotation(0)
+                                  }}
+                                >
+                                  <div className="flex items-center gap-2.5 min-w-0">
+                                    <span className={`w-5 h-5 rounded-md flex items-center justify-center text-[10px] font-bold ${idx === 0 ? 'bg-primary-container text-white' : 'bg-surface-container-high text-on-surface-variant'}`}>
+                                      #{idx + 1}
+                                    </span>
+                                    <div className="min-w-0">
+                                      <div className="text-xs font-bold text-on-surface truncate">{page.notice_id}</div>
+                                      <div className="text-[10px] text-outline">Page {page.page_number || page.page || 1} • {page.filename || `${page.notice_id}.pdf`}</div>
+                                    </div>
+                                  </div>
+
+                                  {page.score != null && (
+                                    <div className="flex flex-col items-end shrink-0">
+                                      <span className="text-xs font-bold font-mono text-primary">{Number(page.score).toFixed(4)}</span>
+                                      <span className="text-[9px] text-outline">similarity</span>
+                                    </div>
+                                  )}
+                                </div>
+                              )
+                            })}
+                          </div>
+                        </div>
+
+                        {/* Diagnostic Insight Callout */}
+                        <div className="p-3 rounded-xl bg-surface-container-low/90 border border-outline-variant/20 text-xs flex items-center gap-2.5">
+                          <span className="material-symbols-outlined text-primary text-[20px] shrink-0">insights</span>
+                          <p className="text-on-surface-variant text-[11px] leading-snug">
+                            Click any evidence thumbnail to display its full page document on the left viewer. Use <strong className="text-primary font-bold">Zoom</strong> and <strong className="text-primary font-bold">Rotate Left (-90°)</strong> controls to inspect timetable grids.
+                          </p>
+                        </div>
+
                       </div>
                     </div>
-                    <div className="flex items-center gap-2 shrink-0">
-                      <button 
-                        className="flex-1 sm:flex-none flex items-center justify-center gap-1.5 px-4 py-1.5 rounded-lg bg-primary-container text-white font-semibold text-xs shadow-sm hover:brightness-110 active:scale-95 transition-all"
-                        onClick={() => handleQuery()}
-                      >
-                        <span className="material-symbols-outlined text-[16px]">manage_search</span>
-                        <span>Search</span>
-                      </button>
-                      <button 
-                        className="flex-1 sm:flex-none flex items-center justify-center gap-1.5 px-4 py-1.5 rounded-lg bg-gradient-to-r from-amber-600 to-amber-500 text-white font-semibold text-xs shadow-sm hover:brightness-110 active:scale-95 transition-all"
-                        onClick={() => handleCompare()}
-                      >
-                        <span className="material-symbols-outlined text-[16px]">electric_bolt</span>
-                        <span>Compare All</span>
-                      </button>
-                    </div>
-                  </div>
-
-                  {/* Pipeline Selector Chips */}
-                  <div className="flex flex-wrap items-center justify-between gap-2 pt-1 border-t border-outline-variant/15 text-xs">
-                    <span className="text-[10px] text-outline uppercase tracking-wider font-mono select-none">Pipeline Mode:</span>
-                    <div className="flex flex-wrap items-center gap-1.5">
-                      <button 
-                        className={`flex items-center gap-1.5 px-2.5 py-1 rounded-md transition-all text-xs ${mode === 'text' ? 'bg-surface-container-high text-on-surface border border-tertiary/50 font-semibold shadow-sm' : 'bg-surface-container-low/50 text-on-surface-variant border border-outline-variant/10 hover:border-tertiary/30'}`}
-                        onClick={() => { setMode('text'); triggerToast('Pipeline mode set to: TEXT BASELINE'); }}
-                      >
-                        <span className="w-1.5 h-1.5 rounded-full bg-tertiary"></span>
-                        <span>Text Baseline (BM25)</span>
-                      </button>
-                      <button 
-                        className={`flex items-center gap-1.5 px-2.5 py-1 rounded-md transition-all text-xs ${mode === 'visual' ? 'bg-surface-container-high text-on-surface border border-primary/50 font-semibold shadow-sm' : 'bg-surface-container-low/50 text-on-surface-variant border border-outline-variant/10 hover:border-primary-container/30'}`}
-                        onClick={() => { setMode('visual'); triggerToast('Pipeline mode set to: VISUAL VLM'); }}
-                      >
-                        <span className="w-1.5 h-1.5 rounded-full bg-primary"></span>
-                        <span>Visual VLM (ColQwen2)</span>
-                      </button>
-                      <button 
-                        className={`flex items-center gap-1.5 px-2.5 py-1 rounded-md transition-all text-xs ${mode === 'hybrid_reranked' ? 'bg-surface-container-high text-on-surface border border-secondary/50 font-semibold shadow-sm' : 'bg-surface-container-low/50 text-on-surface-variant border border-outline-variant/10 hover:border-secondary/30'}`}
-                        onClick={() => { setMode('hybrid_reranked'); triggerToast('Pipeline mode set to: HYBRID RERANKED'); }}
-                      >
-                        <span className="w-1.5 h-1.5 rounded-full bg-secondary"></span>
-                        <span>Hybrid Reranked (ColQwen2 + RRF)</span>
-                      </button>
-                    </div>
-                  </div>
-                </div>
-              </section>
-
-              {/* REFINED COMPACT HERO */}
+                  </>
+                )
+              })()}
+            </div>
+          ) : (
+            /* LANDING CONTENT (HERO & CORPUS REPOSITORY) */
+            <div className="w-full flex flex-col gap-5">
               <section className="flex flex-col items-center justify-center text-center py-1 stagger-2">
                 <div className="max-w-xl flex flex-col items-center gap-1">
                   <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-surface-container-high border border-primary/20 text-primary text-[10px] font-mono">
@@ -903,6 +1147,87 @@ export default function App() {
 
         </div>
       </main>
+
+      {/* FULLSCREEN LIGHTBOX MODAL */}
+      {lightboxImage && (
+        <div 
+          className="fixed inset-0 z-50 bg-black/90 backdrop-blur-md flex flex-col items-center justify-center p-3 sm:p-6 animate-fade-in"
+          onClick={closeLightbox}
+        >
+          {/* Header Bar */}
+          <div 
+            className="w-full max-w-5xl flex items-center justify-between py-2 px-4 mb-3 bg-surface-container/95 border border-outline-variant/30 rounded-xl backdrop-blur-xl shadow-2xl gap-3"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-center gap-2 min-w-0 flex-1">
+              <span className="material-symbols-outlined text-primary text-[20px] shrink-0">image</span>
+              <h3 className="text-xs sm:text-sm font-bold text-on-surface truncate">{lightboxImage.title || 'Document Page Evidence'}</h3>
+            </div>
+
+            {/* Image Rotation Toolbar */}
+            <div className="flex items-center gap-1.5 shrink-0 bg-surface-container-lowest/60 p-1 rounded-lg border border-outline-variant/20">
+              <button 
+                className="flex items-center gap-1 px-2.5 py-1 rounded-md bg-surface-container-high hover:bg-primary/20 hover:text-primary text-on-surface text-xs font-semibold border border-outline-variant/20 transition-all active:scale-95 shadow-sm"
+                onClick={rotateAnticlockwise}
+                title="Rotate Anticlockwise 90° (R or Left Arrow)"
+              >
+                <span className="material-symbols-outlined text-[18px]">rotate_left</span>
+                <span className="hidden sm:inline">Rotate Left (-90°)</span>
+              </button>
+
+              <button 
+                className="flex items-center gap-1 px-2.5 py-1 rounded-md bg-surface-container-high hover:bg-primary/20 hover:text-primary text-on-surface text-xs font-semibold border border-outline-variant/20 transition-all active:scale-95 shadow-sm"
+                onClick={rotateClockwise}
+                title="Rotate Clockwise 90° (Right Arrow)"
+              >
+                <span className="material-symbols-outlined text-[18px]">rotate_right</span>
+                <span className="hidden sm:inline">Rotate Right (+90°)</span>
+              </button>
+
+              {lightboxRotation !== 0 && (
+                <button 
+                  className="flex items-center gap-1 px-2 py-1 rounded-md bg-tertiary-container/40 hover:bg-tertiary-container/70 text-tertiary text-xs font-semibold border border-tertiary/40 transition-all active:scale-95 shadow-sm"
+                  onClick={resetRotation}
+                  title="Reset Image Rotation"
+                >
+                  <span className="material-symbols-outlined text-[16px]">restart_alt</span>
+                  <span className="hidden sm:inline">Reset</span>
+                </button>
+              )}
+
+              <span className="text-[10px] font-mono text-outline px-1.5 py-0.5 rounded bg-surface-container/80 ml-0.5">
+                {((lightboxRotation % 360) + 360) % 360}°
+              </span>
+            </div>
+
+            <button 
+              className="flex items-center gap-1 px-3 py-1 rounded-lg bg-surface-container-high hover:bg-error/20 hover:text-error text-on-surface text-xs font-semibold border border-outline-variant/30 transition-all shrink-0"
+              onClick={closeLightbox}
+              title="Close Fullscreen View (Esc)"
+            >
+              <span className="material-symbols-outlined text-[18px]">close</span>
+              <span>Close</span>
+            </button>
+          </div>
+
+          {/* Image Canvas Container */}
+          <div 
+            className="relative max-w-5xl max-h-[85vh] w-full flex items-center justify-center p-4 rounded-2xl bg-surface-container-lowest/80 border border-outline-variant/20 shadow-2xl overflow-hidden"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <img 
+              src={lightboxImage.url} 
+              alt="Fullscreen Evidence" 
+              style={{ 
+                transform: `rotate(${lightboxRotation}deg)`,
+                maxHeight: Math.abs(lightboxRotation / 90) % 2 === 1 ? '65vw' : '80vh',
+                maxWidth: Math.abs(lightboxRotation / 90) % 2 === 1 ? '65vh' : '100%'
+              }}
+              className="object-contain rounded-lg shadow-lg select-none transition-transform duration-300 ease-in-out"
+            />
+          </div>
+        </div>
+      )}
 
       {/* DOCUMENT PREVIEW MODAL */}
       {docModal && (
